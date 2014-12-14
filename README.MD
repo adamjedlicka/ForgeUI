@@ -4,7 +4,7 @@
 
 ##Downloads
 
-* ForgeUI v0.0.1 - [Download](https://github.com/adamjedlicka/ForgeUI/archive/v0.0.1.zip)
+* ForgeUI - [Download](https://github.com/adamjedlicka/ForgeUI/releases)
 
 ##License
 
