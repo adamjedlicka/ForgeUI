@@ -5,6 +5,8 @@ local ForgeUI = {}
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
+VERSION = "0.0.2"
+AUTHOR = "WintyBadass"
 API_VERSION = 1
 
 -- errors
@@ -23,6 +25,7 @@ local wndItemContainer = nil
 local wndItemContainer2 = nil
 
 local tItemList_Items = {}
+local tRegisteredWindows = {} -- saving windows for repositioning them later
 
 -----------------------------------------------------------------------------------------------
 -- Settings
@@ -30,15 +33,10 @@ local tItemList_Items = {}
 local resetDefaults = false
 
 local tSettings_addons = {}
+local tSettings_windowsPositions = {}
 local tSettings = {
 	apiVersion = API_VERSION,
-	masterColor = "xkcdFireEngineRed",
-	wndMain = {
-		left = 400,
-		top = 180,
-		right = 720,
-		bottom = 480
-	}
+	masterColor = "xkcdFireEngineRed"
 }
 
 -----------------------------------------------------------------------------------------------
@@ -81,6 +79,8 @@ function ForgeUI:OnDocLoaded()
 	Apollo.LoadSprites("ForgeUI_Sprite.xml", "Forge")
 	
     self.wndMain = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Form", nil, self)
+	self.wndMain:FindChild("Version"):FindChild("Text"):SetText(VERSION)
+	self.wndMain:FindChild("Author"):FindChild("Text"):SetText(AUTHOR)
 	self.wndMain:Show(false, true)
 	
 	wndItemList = self.wndMain:FindChild("ForgeUI_ListHolder")
@@ -94,6 +94,14 @@ function ForgeUI:OnDocLoaded()
 	self:SetActiveItem(tmpWnd:FindChild("ForgeUI_Item_Button"))
 	
 	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General", nil)
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_Core")
+	
+	self:Initialize()
+end
+
+function ForgeUI:Initialize()
+
 end
 
 -----------------------------------------------------------------------------------------------
@@ -133,6 +141,30 @@ function ForgeUI.AddItemButton(tAddon, strDisplayName, strWndContainer, tItems)
 	wnd:FindChild("ForgeUI_Item_Button"):SetData(tData)
 	
 	return wnd 
+end
+
+function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName)
+	-- tRegisteredWindows
+	-- tSettings_windowsPositions
+	
+	tRegisteredWindows[strName] = wnd
+	--if tSettings_windowsPositions == nil then return end
+	if tSettings_windowsPositions[strName] ~= nil then
+		wnd:SetAnchorOffsets(
+			tSettings_windowsPositions[strName].left,
+			tSettings_windowsPositions[strName].top,
+			tSettings_windowsPositions[strName].right,
+			tSettings_windowsPositions[strName].bottom
+		)
+	else
+		local nLeft, nTop, nRight, nBottom = wnd:GetAnchorOffsets()
+		tSettings_windowsPositions[strName] = {
+			left = nLeft,
+			top = nTop,
+			right = nRight,
+			bottom = nBottom
+		}
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -184,21 +216,34 @@ function ForgeUI:OnSave(eType)
 
 	tSett = ForgeUI.CopyTable(tSett, tSettings)
 	
-	for addonName, addon in pairs(tAddons) do
+	for addonName, addon in pairs(tAddons) do -- addon settings
 		if addon.ForgeAPI_BeforeSave ~= nil then
 			addon:ForgeAPI_BeforeSave() -- Forge API BeforeSave
 		end
 		tAdd[addonName] = ForgeUI.CopyTable(tAdd[addonName], addon.tSettings)
 	end
+	
+	for id, wnd in pairs(tSettings_windowsPositions) do -- registered windows
+		local nLeft, nTop, nRight, nBottom = tRegisteredWindows[id]:GetAnchorOffsets()
+		tSettings_windowsPositions[id] = {
+			left = nLeft,
+			top = nTop,
+			right = nRight,
+			bottom = nBottom
+		}
+	end
 
 	return {
 		settings = tSett,
-		addons = tAdd
+		addons = tAdd,
+		windowsPositions = tSettings_windowsPositions
 	}
 end
 
 function ForgeUI:OnRestore(eType, tData)
+	if tData.settings == nil then return end
 	tSettings = ForgeUI.CopyTable(tSettings, tData.settings)
+	tSettings_windowsPositions = ForgeUI.CopyTable(tSettings_windowsPositions, tData.windowsPositions)
 	
 	if tData.addons == nil then return end
 	for name, data in pairs(tData.addons) do
@@ -245,9 +290,13 @@ function ForgeUI:OnSaveButtonPressed( wndHandler, wndControl, eMouseButton )
 	RequestReloadUI()
 end
 
-function ForgeUI:OnDefaultsButtonPressed( wndHandler, wndControl, eMouseButton )
+function ForgeUI:ResetDefaults()
 	resetDefaults = true
 	RequestReloadUI()
+end
+
+function ForgeUI:OnDefaultsButtonPressed( wndHandler, wndControl, eMouseButton )
+	ForgeUI.CreateConfirmWindow(self, self.ResetDefaults)
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -255,6 +304,24 @@ end
 ---------------------------------------------------------------------------------------------------
 function ForgeUI:ItemListPressed( wndHandler, wndControl, eMouseButton )
 	self:SetActiveItem(wndControl)
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_ConfirmWindow Functions
+---------------------------------------------------------------------------------------------------
+function ForgeUI:ForgeUI_ConfirmWindow( wndHandler, wndControl, eMouseButton )
+	if(wndControl:GetName() == "YesButton") then
+		wndControl:GetData()()
+		
+	elseif(wndControl:GetName() == "NoButton") then
+	
+	end
+	wndControl:GetParent():Destroy()
+end
+
+function ForgeUI.CreateConfirmWindow(self, fCallback)
+	local wndConfirmWindow = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_ConfirmWindow", nil, ForgeUIInst)
+	wndConfirmWindow:FindChild("YesButton"):SetData(fCallback)
 end
 
 ---------------------------------------------------------------------------------------------------

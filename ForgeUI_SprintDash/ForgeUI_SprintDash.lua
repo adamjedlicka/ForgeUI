@@ -83,11 +83,11 @@ function ForgeUI_SprintDash:ForgeAPI_AfterRegistration()
 end
 
 function ForgeUI_SprintDash:ForgeAPI_AfterRestore()
-	self.wndSprintMeter:SetAnchorOffsets(self.tSettings.sprintAnchorOffsets.nLeft, self.tSettings.sprintAnchorOffsets.nTop, self.tSettings.sprintAnchorOffsets.nRight, self.tSettings.sprintAnchorOffsets.nBottom)
-	self.wndMovables:FindChild("Movable_SprintMeter"):SetAnchorOffsets(self.tSettings.sprintAnchorOffsets.nLeft, self.tSettings.sprintAnchorOffsets.nTop, self.tSettings.sprintAnchorOffsets.nRight, self.tSettings.sprintAnchorOffsets.nBottom)	
-
-	self.wndDashMeter:SetAnchorOffsets(self.tSettings.dashAnchorOffsets.nLeft, self.tSettings.dashAnchorOffsets.nTop, self.tSettings.dashAnchorOffsets.nRight, self.tSettings.dashAnchorOffsets.nBottom)
-	self.wndMovables:FindChild("Movable_DashMeter"):SetAnchorOffsets(self.tSettings.dashAnchorOffsets.nLeft, self.tSettings.dashAnchorOffsets.nTop, self.tSettings.dashAnchorOffsets.nRight, self.tSettings.dashAnchorOffsets.nBottom)
+	ForgeUI.RegisterWindowPosition(self, self.wndSprintMeter, "ForgeUI_SprintDash_Sprint")
+	ForgeUI.RegisterWindowPosition(self, self.wndMovables:FindChild("Movable_SprintMeter"), "ForgeUI_SprintDash_Sprint_Movable")
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndDashMeter, "ForgeUI_SprintDash_Dash")
+	ForgeUI.RegisterWindowPosition(self, self.wndMovables:FindChild("Movable_DashMeter"), "ForgeUI_SprintDash_Dash_Movable")
 
 	self.wndContainers.Container:FindChild("SprintMeter_Color"):SetTextColor(ApolloColor.new("ff" .. self.tSettings.sprintColor))
 	self.wndContainers.Container:FindChild("SprintMeter_Color"):SetText(self.tSettings.sprintColor)
@@ -112,10 +112,6 @@ function ForgeUI_SprintDash:ForgeAPI_BeforeSave()
 		nRight = right,
 		nBottom = bottom
 	}
-end
-
-function ForgeUI_SprintDash:ForgeAPI_TestFunction()
-
 end
 
 function ForgeUI_SprintDash:ForgeAPI_OnUnlockElements()
