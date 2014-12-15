@@ -77,7 +77,15 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	--}) 
 	
 	self.wndPlayerFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PlayerFrame", nil, self)
+	self.wndPlayerBuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerBuffContainerWindow", nil, self)
+	self.wndPlayerDebuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerDebuffContainerWindow", nil, self)
+	
 	self.wndTargetFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_TargetFrame", nil, self)
+	self.wndTargetBuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetBuffContainerWindow", nil, self)
+	self.wndTargetDebuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetDebuffContainerWindow", nil, self)
+	
+	self.wndToTFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ToTFrame", nil, self)
+	self.wndFocusFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_FocusFrame", nil, self)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -89,30 +97,35 @@ function ForgeUI_UnitFrames:OnNextFrame()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
 	self:UpdatePlayerFrame(unitPlayer)
-	
-	self:UpdateTargetFrame(unitPlayer)
-	
 end
 
+-- Player Frame
 function ForgeUI_UnitFrames:UpdatePlayerFrame(unit)
-	self:UpdateHPBar(unit, self.wndPlayerFrame)
-	self:UpdateShieldBar(unit, self.wndPlayerFrame)
-	self:UpdateAbsorbBar(unit, self.wndPlayerFrame)
-	
-	self.wndPlayerFrame:SetData(unit)
-	
 	if unit:IsInCombat() then
 		self.wndPlayerFrame:FindChild("Indicator"):Show(true)
 	else
 		self.wndPlayerFrame:FindChild("Indicator"):Show(false)
 	end
+	
+	self:UpdateHPBar(unit, self.wndPlayerFrame)
+	self:UpdateShieldBar(unit, self.wndPlayerFrame)
+	self:UpdateAbsorbBar(unit, self.wndPlayerFrame)
+	
+	self.wndPlayerFrame:SetData(unit)
+		
+	self:UpdateTargetFrame(unit)
+	self:UpdateFocusFrame(unit)
 end
 
+-- Target Frame
 function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	local unit = unitSource:GetTarget()
 
 	if unit == nil then 
 		self.wndTargetFrame:Show(false)
+		self.wndToTFrame:Show(false)
+		self.wndTargetBuffFrame:Show(false)
+		self.wndTargetDebuffFrame:Show(false)
 		return
 	end
 
@@ -127,16 +140,64 @@ function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	self:UpdateShieldBar(unit, self.wndTargetFrame)
 	self:UpdateAbsorbBar(unit, self.wndTargetFrame)
 	
+	self.wndTargetBuffFrame:SetUnit(unit)
+	self.wndTargetDebuffFrame:SetUnit(unit)
 	self.wndTargetFrame:SetData(unit)
-	
+	self.wndTargetBuffFrame:Show(true)
+	self.wndTargetDebuffFrame:Show(true)
 	self.wndTargetFrame:Show(true)
+	self:UpdateToTFrame(unit)
+end
+
+-- ToT Frame
+function ForgeUI_UnitFrames:UpdateToTFrame(unitSource)
+	local unit = unitSource:GetTarget()
+	
+	if unit == nil then 
+		self.wndToTFrame:Show(false)
+		return
+	end
+	
+	self.wndToTFrame:FindChild("Name"):SetText(unit:GetName())
+	if unit:GetClassId() ~= 23 then
+		self.wndToTFrame:FindChild("Name"):SetTextColor("ff" .. ForgeUI.GetSettings().classColors[tClassEnums[unit:GetClassId()]])
+	else
+		self.wndToTFrame:FindChild("Name"):SetTextColor(unit:GetNameplateColor())
+	end
+	
+	self:UpdateHPBar(unit, self.wndToTFrame)
+	self.wndToTFrame:SetData(unit)
+	self.wndToTFrame:Show(true)
+end
+
+-- Focus Frame
+function ForgeUI_UnitFrames:UpdateFocusFrame(unitSource)
+	local unit = unitSource:GetAlternateTarget()
+	
+	if unit == nil then 
+		self.wndFocusFrame:Show(false)
+		return
+	end
+	
+	self.wndFocusFrame:FindChild("Name"):SetText(unit:GetName())
+	if unit:GetClassId() ~= 23 then
+		self.wndFocusFrame:FindChild("Name"):SetTextColor("ff" .. ForgeUI.GetSettings().classColors[tClassEnums[unit:GetClassId()]])
+	else
+		self.wndFocusFrame:FindChild("Name"):SetTextColor(unit:GetNameplateColor())
+	end
+	
+	self:UpdateHPBar(unit, self.wndFocusFrame)
+	self.wndFocusFrame:SetData(unit)
+	self.wndFocusFrame:Show(true)
 end
 
 function ForgeUI_UnitFrames:UpdateHPBar(unit, wnd)
 	wnd:FindChild("HP_ProgressBar"):SetMax(unit:GetMaxHealth())
 	wnd:FindChild("HP_ProgressBar"):SetProgress(unit:GetHealth())
-	wnd:FindChild("HP_TextValue"):SetText(ForgeUI.ShortNum(unit:GetHealth()))
-	wnd:FindChild("HP_TextPercent"):SetText(math.floor((unit:GetHealth() / unit:GetMaxHealth()) * 100  + 0.5) .. "%")
+	if wnd:FindChild("HP_TextValue") ~= nil then
+		wnd:FindChild("HP_TextValue"):SetText(ForgeUI.ShortNum(unit:GetHealth()))
+		wnd:FindChild("HP_TextPercent"):SetText(math.floor((unit:GetHealth() / unit:GetMaxHealth()) * 100  + 0.5) .. "%")
+	end
 end
 
 function ForgeUI_UnitFrames:UpdateShieldBar(unit, wnd)
@@ -192,6 +253,9 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 	self.wndPlayerFrame:FindChild("Name"):SetText(self.unitPlayer:GetName())
 	self.wndPlayerFrame:FindChild("Name"):SetTextColor("FF" .. ForgeUI.GetSettings().classColors[self.playerClass])
 	
+	self.wndPlayerBuffFrame:SetUnit(self.unitPlayer)
+	self.wndPlayerDebuffFrame:SetUnit(self.unitPlayer)
+	
 	Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNextFrame", self) 
 end
 
@@ -209,6 +273,12 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	self.wndTargetFrame:FindChild("Absorb_ProgressBar"):SetBarColor("ff" .. self.tSettings.absorbBarColor)	
 	self.wndTargetFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
 	self.wndTargetFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+	
+	self.wndToTFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
+	self.wndToTFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
+	
+	self.wndFocusFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
+	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -248,6 +318,13 @@ function ForgeUI_UnitFrames:OnMouseButtonDown( wndHandler, wndControl, eMouseBut
 	end
 	
 	return false
+end
+
+function ForgeUI_UnitFrames:OnGenerateBuffTooltip(wndHandler, wndControl, tType, splBuff)
+	if wndHandler == wndControl or Tooltip == nil then
+		return
+	end
+	Tooltip.GetBuffTooltipForm(self, wndControl, splBuff, {bFutureSpell = false})
 end
 
 local ForgeUI_UnitFramesInst = ForgeUI_UnitFrames:new()
