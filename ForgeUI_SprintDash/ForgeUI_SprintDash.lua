@@ -21,21 +21,9 @@ function ForgeUI_SprintDash:new(o)
 	
 	-- optional
 	self.tSettings = {
-		sprintAnchorOffsets = {
-			nLeft = -100,
-			nTop = -10,
-			nRight = -95, 
-			nBottom	= 75
-		},
-		dashAnchorOffsets = {
-			nLeft = -112,
-			nTop = -10,
-			nRight = -102, 
-			nBottom	= 75
-		},
-		sprintColor = "ffcccccc",
-		dashColor = "ff00aaff",
-		dashColor2 = "ff0055aa"
+		sprintColor = "cccccc",
+		dashColor = "00aaff",
+		dashColor2 = "0055aa"
 	}
 
     return o
@@ -83,11 +71,9 @@ function ForgeUI_SprintDash:ForgeAPI_AfterRegistration()
 end
 
 function ForgeUI_SprintDash:ForgeAPI_AfterRestore()
-	ForgeUI.RegisterWindowPosition(self, self.wndSprintMeter, "ForgeUI_SprintDash_Sprint")
-	ForgeUI.RegisterWindowPosition(self, self.wndMovables:FindChild("Movable_SprintMeter"), "ForgeUI_SprintDash_Sprint_Movable")
+	ForgeUI.RegisterWindowPosition(self, self.wndSprintMeter, "ForgeUI_SprintDash_Sprint", self.wndMovables:FindChild("Movable_SprintMeter"))
 	
-	ForgeUI.RegisterWindowPosition(self, self.wndDashMeter, "ForgeUI_SprintDash_Dash")
-	ForgeUI.RegisterWindowPosition(self, self.wndMovables:FindChild("Movable_DashMeter"), "ForgeUI_SprintDash_Dash_Movable")
+	ForgeUI.RegisterWindowPosition(self, self.wndDashMeter, "ForgeUI_SprintDash_Dash", self.wndMovables:FindChild("Movable_DashMeter"))
 
 	self.wndContainers.Container:FindChild("SprintMeter_Color"):SetTextColor(ApolloColor.new("ff" .. self.tSettings.sprintColor))
 	self.wndContainers.Container:FindChild("SprintMeter_Color"):SetText(self.tSettings.sprintColor)
@@ -98,20 +84,7 @@ function ForgeUI_SprintDash:ForgeAPI_AfterRestore()
 end
 
 function ForgeUI_SprintDash:ForgeAPI_BeforeSave()
-	local left, top, right, bottom = self.wndSprintMeter:GetAnchorOffsets()
-	self.tSettings.sprintAnchorOffsets = {
-		nLeft = left,
-		nTop = top,
-		nRight = right,
-		nBottom = bottom
-	}
-	left, top, right, bottom = self.wndDashMeter:GetAnchorOffsets()
-	self.tSettings.dashAnchorOffsets = {
-		nLeft = left,
-		nTop = top,
-		nRight = right,
-		nBottom = bottom
-	}
+
 end
 
 function ForgeUI_SprintDash:ForgeAPI_OnUnlockElements()
@@ -136,9 +109,11 @@ function ForgeUI_SprintDash:OnNextFrame()
 	local nSprintMax = unitPlayer:GetMaxResource(sprintResource)
 	local bSprintFull = nSprintCurr == nSprintMax or unitPlayer:IsDead()
 
-	self.wndSprintMeter:FindChild("Bar"):SetMax(unitPlayer:GetMaxResource(sprintResource))
-	self.wndSprintMeter:FindChild("Bar"):SetProgress(unitPlayer:GetResource(sprintResource))
-	self.wndSprintMeter:FindChild("Bar"):SetBarColor(ApolloColor.new("ff" .. self.tSettings.sprintColor))
+	if not bSprintFull then
+		self.wndSprintMeter:FindChild("Bar"):SetMax(unitPlayer:GetMaxResource(sprintResource))
+		self.wndSprintMeter:FindChild("Bar"):SetProgress(unitPlayer:GetResource(sprintResource))
+		self.wndSprintMeter:FindChild("Bar"):SetBarColor(ApolloColor.new("ff" .. self.tSettings.sprintColor))
+	end
 	
 	self.wndSprintMeter:Show(not bSprintFull, true)
 	
@@ -147,8 +122,8 @@ function ForgeUI_SprintDash:OnNextFrame()
 	local nDashMax = unitPlayer:GetMaxResource(dashResource)
 	local bDashFull = nDashCurr == nDashMax or unitPlayer:IsDead()
 	
-	if(not bDashFull) then
-		if(nDashCurr < 100) then
+	if not bDashFull then
+		if nDashCurr < 100 then
 			self.wndDashMeter:FindChild("Bar_A"):SetMax(unitPlayer:GetMaxResource(dashResource) / 2)
 			self.wndDashMeter:FindChild("Bar_A"):SetProgress(unitPlayer:GetResource(dashResource))
 			self.wndDashMeter:FindChild("Bar_A"):SetBarColor(ApolloColor.new("ff" .. self.tSettings.dashColor2))
