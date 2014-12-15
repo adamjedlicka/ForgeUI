@@ -121,7 +121,7 @@ end
 function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	local unit = unitSource:GetTarget()
 
-	if unit == nil then 
+	if unit == nil or unit:GetHealth() == nil then 
 		self.wndTargetFrame:Show(false)
 		self.wndToTFrame:Show(false)
 		self.wndTargetBuffFrame:Show(false)
