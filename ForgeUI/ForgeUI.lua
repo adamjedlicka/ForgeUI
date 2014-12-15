@@ -18,6 +18,8 @@ ERR_WRONG_API = 2
 -- Variables
 -----------------------------------------------------------------------------------------------
 local tAddons = {} 
+local bCanRegisterAddons = false
+local tAddonsToRegister = {}
 
 local wndItemList = nil
 local wndActiveItem = nil
@@ -36,7 +38,15 @@ local tSettings_addons = {}
 local tSettings_windowsPositions = {}
 local tSettings = {
 	apiVersion = API_VERSION,
-	masterColor = "xkcdFireEngineRed"
+	masterColor = "xkcdFireEngineRed",
+	classColors = {
+		engineer = "EFAB48",
+		esper = "1591DB",
+		medic = "FFE757",
+		spellslinger = "98C723",
+		stalker = "D23EF4",
+		warrior = "F54F4F"
+	}
 }
 
 -----------------------------------------------------------------------------------------------
@@ -83,25 +93,28 @@ function ForgeUI:OnDocLoaded()
 	self.wndMain:FindChild("Author"):FindChild("Text"):SetText(AUTHOR)
 	self.wndMain:Show(false, true)
 	
-	wndItemList = self.wndMain:FindChild("ForgeUI_ListHolder")
+	wndItemList = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ListHolder", self.wndMain:FindChild("ForgeUI_Form_ItemList"), self)
 	wndItemContainer = self.wndMain:FindChild("ForgeUI_ContainerHolder")
 	wndItemContainer2 = self.wndMain:FindChild("ForgeUI_ContainerHolder2")
 
 	Apollo.RegisterSlashCommand("forgeui", "OnForgeUIOn", self)
 	
-	local tmpWnd = ForgeUI.AddItemButton(self, "Home", "ForgeUI_Home", nil)
-	wndActiveItem = tmpWnd:FindChild("ForgeUI_Item_Button")
-	self:SetActiveItem(tmpWnd:FindChild("ForgeUI_Item_Button"))
+	local tmpWnd = ForgeUI.AddItemButton(self, "Home", "ForgeUI_Home")
+	wndActiveItem = tmpWnd
+	self:SetActiveItem(tmpWnd)
 	
-	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General", nil)
+	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General")
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_Core")
 	
+	bCanRegisterAddons = true
 	self:Initialize()
 end
 
 function ForgeUI:Initialize()
-
+	for _, tAddon in pairs(tAddonsToRegister) do -- loading not registered addons
+		ForgeUI.RegisterAddon(tAddon)
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -111,44 +124,73 @@ function ForgeUI.RegisterAddon(tAddon)
 	if tAddons[tAddon.strAddonName] ~= nil then return ERR_ADDON_REGISTERED end
 	if tAddon.api_version ~= API_VERSION then return ERR_WRONG_API end
 	
-	tAddons[tAddon.strAddonName] = tAddon
-	
-	if tAddon.ForgeAPI_AfterRegistration ~= nil then
-		tAddon:ForgeAPI_AfterRegistration() -- Forge API AfterRegistration
-	end
-	
-	tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
-	
-	if tAddon.ForgeAPI_AfterRestore ~= nil then
-		tAddon:ForgeAPI_AfterRestore() -- Forge API AfterRestore
+	if bCanRegisterAddons then
+		tAddons[tAddon.strAddonName] = tAddon
+		
+		if tAddon.ForgeAPI_AfterRegistration ~= nil then
+			tAddon:ForgeAPI_AfterRegistration() -- Forge API AfterRegistration
+		end
+		
+		tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+		
+		if tAddon.ForgeAPI_AfterRestore ~= nil then
+			tAddon:ForgeAPI_AfterRestore() -- Forge API AfterRestore
+		end
+	else
+		tAddonsToRegister[tAddon.strAddonName] = tAddon
 	end
 end
 
-function ForgeUI.AddItemButton(tAddon, strDisplayName, strWndContainer, tItems)
-	local wnd = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndItemList, ForgeUIInst)
-	wnd:FindChild("ForgeUI_Item_Text"):SetText(strDisplayName)
+function ForgeUI.AddItemButton(tAddon, strDisplayName, strWndContainer, tOptions)
+	local wndButton = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndItemList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
+	wndButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText(strDisplayName)
 	
 	local tData = {}
 	if strWndContainer ~= nil then
 		tAddon.wndContainers[strWndContainer] = Apollo.LoadForm(tAddon.xmlDoc, strWndContainer, wndItemContainer, tAddon)
 		tAddon.wndContainers[strWndContainer]:Show(false)
-		tData.wndContainer = tAddon.wndContainers[strWndContainer]
+		tData.itemContainer = tAddon.wndContainers[strWndContainer]
 	end
 	
-	if tItems ~= nil then
-		tData.tItems = tItems
-	end
-	wnd:FindChild("ForgeUI_Item_Button"):SetData(tData)
+	tData.itemList = wndItemList
 	
-	return wnd 
+	wndButton:SetData(tData)
+	
+	return wndButton
 end
 
-function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName)
-	-- tRegisteredWindows
-	-- tSettings_windowsPositions
+function ForgeUI.AddItemListToButton(tAddon, wndButton, tItems)
+	local wndList = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_ListHolder", ForgeUIInst.wndMain:FindChild("ForgeUI_Form_ItemList"), ForgeUIInst)
+	wndList:Show(false)
+	local wndBackButton = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
+	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText("BACK")
 	
+	for i, tItem in pairs(tItems) do
+		local wndBtn = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
+		wndBtn:GetParent():FindChild("ForgeUI_Item_Text"):SetText(tItem.strDisplayName)
+		tAddon.wndContainers[tItem.strContainer] = Apollo.LoadForm(tAddon.xmlDoc, tItem.strContainer, wndItemContainer, tAddon)
+		tAddon.wndContainers[tItem.strContainer]:Show(false)
+		wndBtn:SetData({
+			itemContainer = tAddon.wndContainers[tItem.strContainer],
+			itemList = nil
+		}) 
+	end
+	
+	wndBackButton:SetData({
+		itemList = wndButton:GetData().itemList
+	})
+	
+	wndButton:SetData({
+		itemContainer = wndButton:GetData().itemContainer,
+		itemList = wndList
+	})
+	
+	wndList:ArrangeChildrenVert()
+end
+
+function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName, wndMovable)
 	tRegisteredWindows[strName] = wnd
-	--if tSettings_windowsPositions == nil then return end
+
 	if tSettings_windowsPositions[strName] ~= nil then
 		wnd:SetAnchorOffsets(
 			tSettings_windowsPositions[strName].left,
@@ -156,6 +198,15 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName)
 			tSettings_windowsPositions[strName].right,
 			tSettings_windowsPositions[strName].bottom
 		)
+		
+		if wndMovable ~= nil then
+			wndMovable:SetAnchorOffsets(
+				tSettings_windowsPositions[strName].left,
+				tSettings_windowsPositions[strName].top,
+				tSettings_windowsPositions[strName].right,
+				tSettings_windowsPositions[strName].bottom
+			)
+		end
 	else
 		local nLeft, nTop, nRight, nBottom = wnd:GetAnchorOffsets()
 		tSettings_windowsPositions[strName] = {
@@ -167,36 +218,8 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName)
 	end
 end
 
------------------------------------------------------------------------------------------------
--- ForgeUI Functions
------------------------------------------------------------------------------------------------
-function ForgeUI:OnConfigure()
-	self:OnForgeUIOn()
-end
-
-function ForgeUI:OnForgeUIOn()
-	wndItemList:ArrangeChildrenVert()
-	self.wndMain:Invoke()
-end
-
-function ForgeUI:OnFOrgeUIOff( wndHandler, wndControl, eMouseButton )
-	self.wndMain:Close()
-end
-
-function ForgeUI:OnUnlockElements()
-	for name, addon in pairs(tAddons) do
-		if addon.ForgeAPI_OnUnlockElements ~= nil then
-			addon:ForgeAPI_OnUnlockElements() -- Forge API OnUnlockElements
-		end
-	end
-end
-
-function ForgeUI:OnLockElements()
-	for _, addon in pairs(tAddons) do
-		if addon.ForgeAPI_OnLockElements ~= nil then
-			addon:ForgeAPI_OnLockElements() -- Forge API OnLockElements
-		end
-	end
+function ForgeUI.GetSettings()
+	return tSettings
 end
 
 -----------------------------------------------------------------------------------------------
@@ -251,16 +274,54 @@ function ForgeUI:OnRestore(eType, tData)
 	end
 end
 
+-----------------------------------------------------------------------------------------------
+-- ForgeUI Functions
+-----------------------------------------------------------------------------------------------
+function ForgeUI:OnConfigure()
+	self:OnForgeUIOn()
+end
+
+function ForgeUI:OnForgeUIOn()
+	wndItemList:ArrangeChildrenVert()
+	self.wndMain:Invoke()
+end
+
+function ForgeUI:OnFOrgeUIOff( wndHandler, wndControl, eMouseButton )
+	self.wndMain:Close()
+end
+
+function ForgeUI:OnUnlockElements()
+	for name, addon in pairs(tAddons) do
+		if addon.ForgeAPI_OnUnlockElements ~= nil then
+			addon:ForgeAPI_OnUnlockElements() -- Forge API OnUnlockElements
+		end
+	end
+end
+
+function ForgeUI:OnLockElements()
+	for _, addon in pairs(tAddons) do
+		if addon.ForgeAPI_OnLockElements ~= nil then
+			addon:ForgeAPI_OnLockElements() -- Forge API OnLockElements
+		end
+	end
+end
+
 ---------------------------------------------------------------------------------------------------
 -- ForgeUI_Form Functions
 ---------------------------------------------------------------------------------------------------
 function ForgeUI:SetActiveItem(wndControl)
-	wndActiveItem:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("white")
-	wndActiveItem = wndControl
-	wndControl:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("xkcdFireEngineRed")
 	wndItemContainer2:Show(false)
-	wndItemContainer2 = wndControl:GetData().wndContainer
-	wndItemContainer2:Show(true)
+	if wndControl:GetData().itemContainer ~= nil then
+		wndActiveItem:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("white")
+		wndActiveItem = wndControl
+		wndControl:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("xkcdFireEngineRed")
+		wndItemContainer2 = wndControl:GetData().itemContainer
+		wndItemContainer2:Show(true)
+	else
+		wndItemList:Show(false)
+		wndItemList = wndControl:GetData().itemList
+		wndItemList:Show(true)	
+	end
 end
 
 function ForgeUI:TestFunction( wndHandler, wndControl, eMouseButton )
@@ -327,6 +388,10 @@ end
 ---------------------------------------------------------------------------------------------------
 -- Libraries
 ---------------------------------------------------------------------------------------------------
+function ForgeUI.ReturnTestStr()
+	return "OK"
+end
+
 function ForgeUI.CopyTable(tNew, tOld)
 	if tOld == nil then return end
 	if tNew == nil then
@@ -341,6 +406,40 @@ function ForgeUI.CopyTable(tNew, tOld)
 		end
 	end
 	return tNew
+end
+
+function ForgeUI.ShortNum(num)
+	local tmp = tostring(num)
+    if not num then
+        return 0
+    elseif num >= 1000000 then
+        ret = string.sub(tmp, 1, string.len(tmp) - 6) .. "." .. string.sub(tmp, string.len(tmp) - 5, string.len(tmp) - 5) .. "M"
+    elseif num >= 1000 then
+        ret = string.sub(tmp, 1, string.len(tmp) - 3) .. "." .. string.sub(tmp, string.len(tmp) - 2, string.len(tmp) - 2) .. "k"    else
+        ret = num -- hundreds
+    end
+    return ret
+end
+
+function ForgeUI.FormatDuration(tim)
+	if tim == nil then return end 
+	if (tim>86400) then
+		return ("%.0fd"):format(tim/86400)
+	elseif (tim>3600) then
+		return ("%.0fh"):format(tim/3600)
+	elseif (tim>60) then
+		return ("%.0fm"):format(tim/60)
+	elseif (tim>5) then
+		return ("%.0fs"):format(tim)
+	elseif (tim>0) then
+		return ("%.1fs"):format(tim)
+	elseif (tim==0) then
+		return ""
+	end
+end
+
+function ForgeUI.ConvertAlpha(value)	
+	return string.format("%02X", math.floor(value * 255 + 0.5))
 end
 
 ForgeUIInst:Init() 
