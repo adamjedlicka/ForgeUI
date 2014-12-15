@@ -60,7 +60,7 @@ end
 -- ForgeAPI
 -------------------------------------------------------------------------------
 function ForgeUI_SprintDash:ForgeAPI_AfterRegistration()
-	ForgeUI.AddItemButton(self, "Sprint / dash meter", "Container", nil)
+	ForgeUI.AddItemButton(self, "Sprint / dash meter", "Container")
 
 	self.wndSprintMeter = Apollo.LoadForm(self.xmlDoc, "SprintMeter", "InWorldHudStratum", self)
 	self.wndDashMeter = Apollo.LoadForm(self.xmlDoc, "DashMeter", "InWorldHudStratum", self)

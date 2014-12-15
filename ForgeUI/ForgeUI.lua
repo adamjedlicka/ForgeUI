@@ -38,7 +38,15 @@ local tSettings_addons = {}
 local tSettings_windowsPositions = {}
 local tSettings = {
 	apiVersion = API_VERSION,
-	masterColor = "xkcdFireEngineRed"
+	masterColor = "xkcdFireEngineRed",
+	classColors = {
+		engineer = "EFAB48",
+		esper = "1591DB",
+		medic = "FFE757",
+		spellslinger = "98C723",
+		stalker = "D23EF4",
+		warrior = "F54F4F"
+	}
 }
 
 -----------------------------------------------------------------------------------------------
@@ -91,11 +99,11 @@ function ForgeUI:OnDocLoaded()
 
 	Apollo.RegisterSlashCommand("forgeui", "OnForgeUIOn", self)
 	
-	local tmpWnd = ForgeUI.AddItemButton(self, "Home", "ForgeUI_Home", nil)
+	local tmpWnd = ForgeUI.AddItemButton(self, "Home", "ForgeUI_Home")
 	wndActiveItem = tmpWnd
 	self:SetActiveItem(tmpWnd)
 	
-	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General", nil)
+	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General")
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_Core")
 	
@@ -133,9 +141,9 @@ function ForgeUI.RegisterAddon(tAddon)
 	end
 end
 
-function ForgeUI.AddItemButton(tAddon, strDisplayName, strWndContainer)
-	local wnd = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndItemList, ForgeUIInst)
-	wnd:FindChild("ForgeUI_Item_Text"):SetText(strDisplayName)
+function ForgeUI.AddItemButton(tAddon, strDisplayName, strWndContainer, tOptions)
+	local wndButton = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndItemList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
+	wndButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText(strDisplayName)
 	
 	local tData = {}
 	if strWndContainer ~= nil then
@@ -146,9 +154,9 @@ function ForgeUI.AddItemButton(tAddon, strDisplayName, strWndContainer)
 	
 	tData.itemList = wndItemList
 	
-	wnd:FindChild("ForgeUI_Item_Button"):SetData(tData)
+	wndButton:SetData(tData)
 	
-	return wnd:FindChild("ForgeUI_Item_Button")
+	return wndButton
 end
 
 function ForgeUI.AddItemListToButton(tAddon, wndButton, tItems)
@@ -175,7 +183,7 @@ function ForgeUI.AddItemListToButton(tAddon, wndButton, tItems)
 	wndButton:SetData({
 		itemContainer = wndButton:GetData().itemContainer,
 		itemList = wndList
-	})	
+	})
 	
 	wndList:ArrangeChildrenVert()
 end
@@ -208,6 +216,10 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName, wndMovable)
 			bottom = nBottom
 		}
 	end
+end
+
+function ForgeUI.GetSettings()
+	return tSettings
 end
 
 -----------------------------------------------------------------------------------------------
@@ -298,8 +310,8 @@ end
 -- ForgeUI_Form Functions
 ---------------------------------------------------------------------------------------------------
 function ForgeUI:SetActiveItem(wndControl)
+	wndItemContainer2:Show(false)
 	if wndControl:GetData().itemContainer ~= nil then
-		wndItemContainer2:Show(false)
 		wndActiveItem:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("white")
 		wndActiveItem = wndControl
 		wndControl:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("xkcdFireEngineRed")
@@ -376,6 +388,10 @@ end
 ---------------------------------------------------------------------------------------------------
 -- Libraries
 ---------------------------------------------------------------------------------------------------
+function ForgeUI.ReturnTestStr()
+	return "OK"
+end
+
 function ForgeUI.CopyTable(tNew, tOld)
 	if tOld == nil then return end
 	if tNew == nil then
@@ -390,6 +406,40 @@ function ForgeUI.CopyTable(tNew, tOld)
 		end
 	end
 	return tNew
+end
+
+function ForgeUI.ShortNum(num)
+	local tmp = tostring(num)
+    if not num then
+        return 0
+    elseif num >= 1000000 then
+        ret = string.sub(tmp, 1, string.len(tmp) - 6) .. "." .. string.sub(tmp, string.len(tmp) - 5, string.len(tmp) - 5) .. "M"
+    elseif num >= 1000 then
+        ret = string.sub(tmp, 1, string.len(tmp) - 3) .. "." .. string.sub(tmp, string.len(tmp) - 2, string.len(tmp) - 2) .. "k"    else
+        ret = num -- hundreds
+    end
+    return ret
+end
+
+function ForgeUI.FormatDuration(tim)
+	if tim == nil then return end 
+	if (tim>86400) then
+		return ("%.0fd"):format(tim/86400)
+	elseif (tim>3600) then
+		return ("%.0fh"):format(tim/3600)
+	elseif (tim>60) then
+		return ("%.0fm"):format(tim/60)
+	elseif (tim>5) then
+		return ("%.0fs"):format(tim)
+	elseif (tim>0) then
+		return ("%.1fs"):format(tim)
+	elseif (tim==0) then
+		return ""
+	end
+end
+
+function ForgeUI.ConvertAlpha(value)	
+	return string.format("%02X", math.floor(value * 255 + 0.5))
 end
 
 ForgeUIInst:Init() 
