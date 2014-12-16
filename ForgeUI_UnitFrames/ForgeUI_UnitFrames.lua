@@ -280,19 +280,21 @@ function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
 end
 
 function ForgeUI_UnitFrames:UpdateHazards(unit)
+	self.wndHazardHeat:Show(false)
+	self.wndHazardToxic:Show(false)
+
 	for idx, tActiveHazard in ipairs(HazardsLib.GetHazardActiveList()) do
-		self.wndHazardHeat:Show(false)
-		self.wndHazardToxic:Show(false)
-	
 		if tActiveHazard.eHazardType == HazardsLib.HazardType_Radiation then
 			self.wndHazardToxic:Show(true)
-			self.wndHazardToxic:SetMax(tActiveHazard.fMaxValue)
-			self.wndHazardToxic:SetProgress(tActiveHazard.fMeterValue)
+			self.wndHazardToxic:FindChild("ProgressBar"):SetMax(tActiveHazard.fMaxValue)
+			self.wndHazardToxic:FindChild("ProgressBar"):SetProgress(tActiveHazard.fMeterValue)
+			self.wndHazardHeat:FindChild("Text"):SetText("Radiation - " .. tActiveHazard.fMeterValue)
 		end
 		if tActiveHazard.eHazardType == HazardsLib.HazardType_Temperature then
-			self.wndHazardToxic:Show(true)
-			self.wndHazardToxic:SetMax(tActiveHazard.fMaxValue)
-			self.wndHazardToxic:SetProgress(tActiveHazard.fMeterValue)
+			self.wndHazardHeat:Show(true)
+			self.wndHazardHeat:FindChild("ProgressBar"):SetMax(tActiveHazard.fMaxValue)
+			self.wndHazardHeat:FindChild("ProgressBar"):SetProgress(tActiveHazard.fMeterValue)
+			self.wndHazardHeat:FindChild("Text"):SetText("Heat - " .. tActiveHazard.fMeterValue)
 		end
 	end
 end
