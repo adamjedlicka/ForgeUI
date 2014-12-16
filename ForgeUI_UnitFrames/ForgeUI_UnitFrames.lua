@@ -281,16 +281,16 @@ function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
 end
 
 function ForgeUI_UnitFrames:UpdateHazards(unit)
-	self.wndHazardHeat:Show(false)
-	self.wndHazardToxic:Show(false)
-	
 	for idx, tActiveHazard in ipairs(HazardsLib.GetHazardActiveList()) do
-		if tActiveHazard.eHazardType == HazardsLib.HazardType_Radiation and self.luaRadiation.showFrame == 1 then
+		self.wndHazardHeat:Show(false)
+		self.wndHazardToxic:Show(false)
+	
+		if tActiveHazard.eHazardType == HazardsLib.HazardType_Radiation then
 			self.wndHazardToxic:Show(true)
 			self.wndHazardToxic:SetMax(tActiveHazard.fMaxValue)
 			self.wndHazardToxic:SetProgress(tActiveHazard.fMeterValue)
 		end
-		if tActiveHazard.eHazardType == HazardsLib.HazardType_Temperature and self.luaTemperature.showFrame == 1 then
+		if tActiveHazard.eHazardType == HazardsLib.HazardType_Temperature then
 			self.wndHazardToxic:Show(true)
 			self.wndHazardToxic:SetMax(tActiveHazard.fMaxValue)
 			self.wndHazardToxic:SetProgress(tActiveHazard.fMeterValue)
