@@ -76,17 +76,17 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	--}) 
 	
 	self.wndPlayerFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PlayerFrame", "FixedHudStratumLow", self)
-	self.wndPlayerBuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerBuffContainerWindow", "FixedHudStratumLow", self)
-	self.wndPlayerDebuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerDebuffContainerWindow", "FixedHudStratumLow", self)
+	self.wndPlayerBuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerBuffContainerWindow", "FixedHudStratumHigh", self)
+	self.wndPlayerDebuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerDebuffContainerWindow", "FixedHudStratumHigh", self)
 	
 	self.wndTargetFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_TargetFrame", "FixedHudStratumLow", self)
-	self.wndTargetBuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetBuffContainerWindow", "FixedHudStratumLow", self)
-	self.wndTargetDebuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetDebuffContainerWindow", "FixedHudStratumLow", self)
+	self.wndTargetBuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetBuffContainerWindow", "FixedHudStratumHigh", self)
+	self.wndTargetDebuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetDebuffContainerWindow", "FixedHudStratumHigh", self)
 	
 	self.wndToTFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ToTFrame", "FixedHudStratumLow", self)
 	self.wndFocusFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_FocusFrame", "FixedHudStratumLow", self)
 	
-	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", "FixedHudStratumHigh", self)
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", "FixedHudStratumMedium", self)
 	self.wndMovables:Show(false)
 end
 
@@ -115,6 +115,7 @@ function ForgeUI_UnitFrames:UpdatePlayerFrame(unit)
 	self:UpdateHPBar(unit, self.wndPlayerFrame)
 	self:UpdateShieldBar(unit, self.wndPlayerFrame)
 	self:UpdateAbsorbBar(unit, self.wndPlayerFrame)
+	self:UpdateInterruptArmor(unit, self.wndPlayerFrame)
 	
 	self.wndPlayerFrame:SetData(unit)
 	

@@ -21,9 +21,9 @@ function ForgeUI_SprintDash:new(o)
 	
 	-- optional
 	self.tSettings = {
-		sprintColor = "cccccc",
-		dashColor = "00aaff",
-		dashColor2 = "0055aa"
+		sprintColor = "CCCCCC",
+		dashColor = "00AAFF",
+		dashColor2 = "0055AA"
 	}
 
     return o
