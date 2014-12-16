@@ -215,7 +215,7 @@ function ForgeUI_UnitFrames:UpdateHPBar(unit, wnd)
 		wnd:FindChild("HP_ProgressBar"):SetProgress(unit:GetHealth())
 		if wnd:FindChild("HP_TextValue") ~= nil then
 			wnd:FindChild("HP_TextValue"):SetText(ForgeUI.ShortNum(unit:GetHealth()))
-			wnd:FindChild("HP_TextPercent"):SetText(math.floor((unit:GetHealth() / unit:GetMaxHealth()) * 100  + 0.5) .. "%")
+			wnd:FindChild("HP_TextPercent"):SetText(ForgeUI.Round((unit:GetHealth() / unit:GetMaxHealth()) * 100, 1) .. "%")
 		end
 	else
 		wnd:FindChild("Background"):Show(false)
@@ -230,7 +230,7 @@ end
 -- shield bar
 function ForgeUI_UnitFrames:UpdateShieldBar(unit, wnd)
 	if unit:GetHealth() ~= nil then
-		if unit:GetShieldCapacity() == 0 then
+		if unit:GetShieldCapacity() == 0 or unit:IsDead() then
 			wnd:FindChild("ShieldBar"):Show(false)
 		else
 			wnd:FindChild("ShieldBar"):Show(true)
@@ -238,7 +238,6 @@ function ForgeUI_UnitFrames:UpdateShieldBar(unit, wnd)
 			wnd:FindChild("Shield_ProgressBar"):SetProgress(unit:GetShieldCapacity())
 			wnd:FindChild("Shield_TextValue"):SetText(ForgeUI.ShortNum(unit:GetShieldCapacity()))
 		end
-		wnd:FindChild("ShieldBar"):Show(true)
 	else
 		wnd:FindChild("ShieldBar"):Show(false)
 	end
@@ -247,7 +246,7 @@ end
 -- absorb bar
 function ForgeUI_UnitFrames:UpdateAbsorbBar(unit, wnd)
 	if unit:GetHealth() ~= nil then
-		if unit:GetAbsorptionValue() == 0 then
+		if unit:GetAbsorptionValue() == 0 or unit:IsDead() then
 			wnd:FindChild("AbsorbBar"):Show(false)
 		else
 			wnd:FindChild("AbsorbBar"):Show(true)
@@ -266,7 +265,7 @@ function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
 	--sprites: HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite
 	nValue = unit:GetInterruptArmorValue()
 	nMax = unit:GetInterruptArmorMax()
-	if nMax == 0 or nValue == nil then
+	if nMax == 0 or nValue == nil or unit:IsDead() then
 		wnd:FindChild("InterruptArmor"):Show(false, true)
 	else
 		wnd:FindChild("InterruptArmor"):Show(true, true)

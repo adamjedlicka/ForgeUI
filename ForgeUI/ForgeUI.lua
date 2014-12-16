@@ -475,6 +475,11 @@ function ForgeUI.FormatDuration(tim)
 	end
 end
 
+function ForgeUI.Round(num, idp)
+  local mult = 10^(idp or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
+
 function ForgeUI.ConvertAlpha(value)	
 	return string.format("%02X", math.floor(value * 255 + 0.5))
 end
