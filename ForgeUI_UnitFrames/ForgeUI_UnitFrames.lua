@@ -44,7 +44,6 @@ function ForgeUI_UnitFrames:new(o)
 		absorbBarColor = "FFC600"
 	}
 	
-	self.unitPlayer = nil
 	self.playerClass = nil
 
     return o
@@ -110,7 +109,7 @@ function ForgeUI_UnitFrames:UpdatePlayerFrame(unit)
 		self.wndPlayerFrame:FindChild("Indicator"):Show(false)
 	end
 	
-	self.wndPlayerFrame:FindChild("Name"):SetText(self.unitPlayer:GetName())
+	self.wndPlayerFrame:FindChild("Name"):SetText(unit:GetName())
 	self.wndPlayerFrame:FindChild("Name"):SetTextColor("FF" .. ForgeUI.GetSettings().classColors[self.playerClass])
 	
 	self:UpdateHPBar(unit, self.wndPlayerFrame)
@@ -256,16 +255,19 @@ end
 -- interrupt armor
 function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
 	--sprites: HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite
-	if unit:GetInterruptArmorValue() > 0 then
-		wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
-		wnd:FindChild("InterruptArmor_Value"):SetText(unit:GetInterruptArmorValue())
-		wnd:FindChild("InterruptArmor"):Show(true, true)
-	elseif unit:GetInterruptArmorValue() == -1 then
-		wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
-		wnd:FindChild("InterruptArmor_Value"):SetText("")
-		wnd:FindChild("InterruptArmor"):Show(true, true)
-	elseif unit:GetInterruptArmorValue() == 0 then
+	nValue = unit:GetInterruptArmorValue()
+	nMax = unit:GetInterruptArmorMax()
+	if nMax == 0 or nValue == nil then
 		wnd:FindChild("InterruptArmor"):Show(false, true)
+	else
+		wnd:FindChild("InterruptArmor"):Show(true, true)
+		if nMax == -1 then
+			wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
+			wnd:FindChild("InterruptArmor_Value"):SetText("")
+		elseif nMax > 0 then
+			wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
+			wnd:FindChild("InterruptArmor_Value"):SetText(nValue)
+		end
 	end
 end
 
@@ -274,13 +276,13 @@ end
 -----------------------------------------------------------------------------------------------
 
 function ForgeUI_UnitFrames:OnCharacterCreated()
-	self.unitPlayer = GameLib.GetPlayerUnit()
-	if self.unitPlayer == nil then
+	local unitPlayer = GameLib.GetPlayerUnit()
+	if unitPlayer == nil then
 		Print("ForgeUI ERROR: Wrong class")
 		return
 	end
 	
-	local eClassId = self.unitPlayer:GetClassId()
+	local eClassId = unitPlayer:GetClassId()
 	if eClassId == GameLib.CodeEnumClass.Engineer then
 		self.playerClass = "engineer"
 	elseif eClassId == GameLib.CodeEnumClass.Esper then
@@ -295,10 +297,8 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 		self.playerClass = "warrior"
 	end
 	
-	Print(self.playerClass)
-	
-	self.wndPlayerBuffFrame:SetUnit(self.unitPlayer)
-	self.wndPlayerDebuffFrame:SetUnit(self.unitPlayer)
+	self.wndPlayerBuffFrame:SetUnit(unitPlayer)
+	self.wndPlayerDebuffFrame:SetUnit(unitPlayer)
 	
 	Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNextFrame", self) 
 end
