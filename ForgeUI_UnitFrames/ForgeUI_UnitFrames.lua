@@ -39,9 +39,9 @@ function ForgeUI_UnitFrames:new(o)
 	self.tSettings = {
 		backgroundBarColor = "131313",
 		hpBarColor = "272727",
-		hpTextColor = "75cc26",
-		shieldBarColor = "0699f3",
-		absorbBarColor = "ffc600"
+		hpTextColor = "75CC26",
+		shieldBarColor = "0699F3",
+		absorbBarColor = "FFC600"
 	}
 	
 	self.unitPlayer = nil
@@ -76,16 +76,19 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	--	{ strDisplayName = "Target frame", strContainer = "Container_TargetFrame" }
 	--}) 
 	
-	self.wndPlayerFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PlayerFrame", nil, self)
-	self.wndPlayerBuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerBuffContainerWindow", nil, self)
-	self.wndPlayerDebuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerDebuffContainerWindow", nil, self)
+	self.wndPlayerFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PlayerFrame", "FixedHudStratumLow", self)
+	self.wndPlayerBuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerBuffContainerWindow", "FixedHudStratumLow", self)
+	self.wndPlayerDebuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerDebuffContainerWindow", "FixedHudStratumLow", self)
 	
-	self.wndTargetFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_TargetFrame", nil, self)
-	self.wndTargetBuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetBuffContainerWindow", nil, self)
-	self.wndTargetDebuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetDebuffContainerWindow", nil, self)
+	self.wndTargetFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_TargetFrame", "FixedHudStratumLow", self)
+	self.wndTargetBuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetBuffContainerWindow", "FixedHudStratumLow", self)
+	self.wndTargetDebuffFrame = Apollo.LoadForm(self.xmlDoc, "TargetDebuffContainerWindow", "FixedHudStratumLow", self)
 	
-	self.wndToTFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ToTFrame", nil, self)
-	self.wndFocusFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_FocusFrame", nil, self)
+	self.wndToTFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ToTFrame", "FixedHudStratumLow", self)
+	self.wndFocusFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_FocusFrame", "FixedHudStratumLow", self)
+	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", "FixedHudStratumHigh", self)
+	self.wndMovables:Show(false)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -107,6 +110,9 @@ function ForgeUI_UnitFrames:UpdatePlayerFrame(unit)
 		self.wndPlayerFrame:FindChild("Indicator"):Show(false)
 	end
 	
+	self.wndPlayerFrame:FindChild("Name"):SetText(self.unitPlayer:GetName())
+	self.wndPlayerFrame:FindChild("Name"):SetTextColor("FF" .. ForgeUI.GetSettings().classColors[self.playerClass])
+	
 	self:UpdateHPBar(unit, self.wndPlayerFrame)
 	self:UpdateShieldBar(unit, self.wndPlayerFrame)
 	self:UpdateAbsorbBar(unit, self.wndPlayerFrame)
@@ -121,10 +127,10 @@ end
 function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	local unit = unitSource:GetTarget()
 
-	if unit == nil or unit:GetHealth() == nil then 
-		self.wndTargetFrame:Show(false)
-		self.wndToTFrame:Show(false)
-		self.wndTargetBuffFrame:Show(false)
+	if unit == nil then 
+		self.wndTargetFrame:Show(false, true)
+		self.wndToTFrame:Show(false, true)
+		self.wndTargetBuffFrame:Show(false, true)
 		self.wndTargetDebuffFrame:Show(false)
 		return
 	end
@@ -139,13 +145,15 @@ function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	self:UpdateHPBar(unit, self.wndTargetFrame)
 	self:UpdateShieldBar(unit, self.wndTargetFrame)
 	self:UpdateAbsorbBar(unit, self.wndTargetFrame)
+	self:UpdateInterruptArmor(unit, self.wndTargetFrame)
 	
 	self.wndTargetBuffFrame:SetUnit(unit)
 	self.wndTargetDebuffFrame:SetUnit(unit)
 	self.wndTargetFrame:SetData(unit)
-	self.wndTargetBuffFrame:Show(true)
-	self.wndTargetDebuffFrame:Show(true)
-	self.wndTargetFrame:Show(true)
+	self.wndTargetBuffFrame:Show(true, true)
+	self.wndTargetDebuffFrame:Show(true, true)
+	self.wndTargetFrame:Show(true, true)
+	
 	self:UpdateToTFrame(unit)
 end
 
@@ -191,34 +199,73 @@ function ForgeUI_UnitFrames:UpdateFocusFrame(unitSource)
 	self.wndFocusFrame:Show(true)
 end
 
+-- hp bar
 function ForgeUI_UnitFrames:UpdateHPBar(unit, wnd)
-	wnd:FindChild("HP_ProgressBar"):SetMax(unit:GetMaxHealth())
-	wnd:FindChild("HP_ProgressBar"):SetProgress(unit:GetHealth())
-	if wnd:FindChild("HP_TextValue") ~= nil then
-		wnd:FindChild("HP_TextValue"):SetText(ForgeUI.ShortNum(unit:GetHealth()))
-		wnd:FindChild("HP_TextPercent"):SetText(math.floor((unit:GetHealth() / unit:GetMaxHealth()) * 100  + 0.5) .. "%")
-	end
-end
-
-function ForgeUI_UnitFrames:UpdateShieldBar(unit, wnd)
-	if unit:GetShieldCapacity() == 0 then
-		wnd:FindChild("ShieldBar"):Show(false)
+	if unit:GetHealth() ~= nil then
+		wnd:FindChild("Background"):Show(true)
+		wnd:FindChild("HP_ProgressBar"):SetMax(unit:GetMaxHealth())
+		wnd:FindChild("HP_ProgressBar"):SetProgress(unit:GetHealth())
+		if wnd:FindChild("HP_TextValue") ~= nil then
+			wnd:FindChild("HP_TextValue"):SetText(ForgeUI.ShortNum(unit:GetHealth()))
+			wnd:FindChild("HP_TextPercent"):SetText(math.floor((unit:GetHealth() / unit:GetMaxHealth()) * 100  + 0.5) .. "%")
+		end
 	else
-		wnd:FindChild("ShieldBar"):Show(true)
-		wnd:FindChild("Shield_ProgressBar"):SetMax(unit:GetShieldCapacityMax())
-		wnd:FindChild("Shield_ProgressBar"):SetProgress(unit:GetShieldCapacity())
-		wnd:FindChild("Shield_TextValue"):SetText(ForgeUI.ShortNum(unit:GetShieldCapacity()))
+		wnd:FindChild("Background"):Show(false)
+		wnd:FindChild("HP_ProgressBar"):SetProgress(0)
+		if wnd:FindChild("HP_TextValue") ~= nil then
+			wnd:FindChild("HP_TextValue"):SetText("")
+			wnd:FindChild("HP_TextPercent"):SetText("")
+		end
 	end
 end
 
+-- shield bar
+function ForgeUI_UnitFrames:UpdateShieldBar(unit, wnd)
+	if unit:GetHealth() ~= nil then
+		if unit:GetShieldCapacity() == 0 then
+			wnd:FindChild("ShieldBar"):Show(false)
+		else
+			wnd:FindChild("ShieldBar"):Show(true)
+			wnd:FindChild("Shield_ProgressBar"):SetMax(unit:GetShieldCapacityMax())
+			wnd:FindChild("Shield_ProgressBar"):SetProgress(unit:GetShieldCapacity())
+			wnd:FindChild("Shield_TextValue"):SetText(ForgeUI.ShortNum(unit:GetShieldCapacity()))
+		end
+		wnd:FindChild("ShieldBar"):Show(true)
+	else
+		wnd:FindChild("ShieldBar"):Show(false)
+	end
+end
+
+-- absorb bar
 function ForgeUI_UnitFrames:UpdateAbsorbBar(unit, wnd)
-	if unit:GetAbsorptionValue() == 0 then
+	if unit:GetHealth() ~= nil then
+		if unit:GetAbsorptionValue() == 0 then
+			wnd:FindChild("AbsorbBar"):Show(false)
+		else
+			wnd:FindChild("AbsorbBar"):Show(true)
+			wnd:FindChild("Absorb_ProgressBar"):SetMax(unit:GetAbsorptionMax())
+			wnd:FindChild("Absorb_ProgressBar"):SetProgress(unit:GetAbsorptionValue())
+			wnd:FindChild("Absorb_TextValue"):SetText(ForgeUI.ShortNum(unit:GetAbsorptionValue()))
+		end
 		wnd:FindChild("AbsorbBar"):Show(false)
 	else
-		wnd:FindChild("AbsorbBar"):Show(true)
-		wnd:FindChild("Absorb_ProgressBar"):SetMax(unit:GetAbsorptionMax())
-		wnd:FindChild("Absorb_ProgressBar"):SetProgress(unit:GetAbsorptionValue())
-		wnd:FindChild("Absorb_TextValue"):SetText(ForgeUI.ShortNum(unit:GetAbsorptionValue()))
+		wnd:FindChild("AbsorbBar"):Show(false)
+	end
+end
+
+-- interrupt armor
+function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
+	--sprites: HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite
+	if unit:GetInterruptArmorValue() > 0 then
+		wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
+		wnd:FindChild("InterruptArmor_Value"):SetText(unit:GetInterruptArmorValue())
+		wnd:FindChild("InterruptArmor"):Show(true, true)
+	elseif unit:GetInterruptArmorValue() == -1 then
+		wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
+		wnd:FindChild("InterruptArmor_Value"):SetText("")
+		wnd:FindChild("InterruptArmor"):Show(true, true)
+	elseif unit:GetInterruptArmorValue() == 0 then
+		wnd:FindChild("InterruptArmor"):Show(false, true)
 	end
 end
 
@@ -250,9 +297,6 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 	
 	Print(self.playerClass)
 	
-	self.wndPlayerFrame:FindChild("Name"):SetText(self.unitPlayer:GetName())
-	self.wndPlayerFrame:FindChild("Name"):SetTextColor("FF" .. ForgeUI.GetSettings().classColors[self.playerClass])
-	
 	self.wndPlayerBuffFrame:SetUnit(self.unitPlayer)
 	self.wndPlayerDebuffFrame:SetUnit(self.unitPlayer)
 	
@@ -260,6 +304,16 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 end
 
 function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerFrame, "ForgeUI_UnitFrames_PlayerFrame", self.wndMovables:FindChild("Movable_PlayerFrame"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetFrame, "ForgeUI_UnitFrames_TargetFrame", self.wndMovables:FindChild("Movable_TargetFrame"))
+	ForgeUI.RegisterWindowPosition(self, self.wndFocusFrame, "ForgeUI_UnitFrames_FocusFrame", self.wndMovables:FindChild("Movable_FocusFrame"))
+	ForgeUI.RegisterWindowPosition(self, self.wndToTFrame, "ForgeUI_UnitFrames_ToTFrame", self.wndMovables:FindChild("Movable_ToTFrame"))
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerBuffFrame, "ForgeUI_UnitFrames_PlayerBuffs", self.wndMovables:FindChild("Movable_PlayerBuffs"))
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerDebuffFrame, "ForgeUI_UnitFrames_PlayerDebuffs", self.wndMovables:FindChild("Movable_PlayerDebuffs"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetBuffFrame, "ForgeUI_UnitFrames_TargetBuffs", self.wndMovables:FindChild("Movable_TargetBuffs"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetDebuffFrame, "ForgeUI_UnitFrames_TargetDebuffs", self.wndMovables:FindChild("Movable_TargetDebuffs"))
+
 	self.wndPlayerFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
 	self.wndPlayerFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
 	self.wndPlayerFrame:FindChild("Shield_ProgressBar"):SetBarColor("ff" .. self.tSettings.shieldBarColor)
@@ -279,6 +333,16 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	
 	self.wndFocusFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
 	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
+end
+
+function ForgeUI_UnitFrames:ForgeAPI_OnUnlockElements()
+	self.wndMovables:Show(true)
+	--self.wndPlayerFrame:Show(false)
+end
+
+function ForgeUI_UnitFrames:ForgeAPI_OnLockElements()
+	self.wndMovables:Show(false)
+	--self.wndPlayerFrame:Show(true)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -325,6 +389,22 @@ function ForgeUI_UnitFrames:OnGenerateBuffTooltip(wndHandler, wndControl, tType,
 		return
 	end
 	Tooltip.GetBuffTooltipForm(self, wndControl, splBuff, {bFutureSpell = false})
+end
+
+---------------------------------------------------------------------------------------------------
+-- Movables Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_UnitFrames:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	self.wndPlayerFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerFrame"):GetAnchorOffsets())
+	self.wndTargetFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetFrame"):GetAnchorOffsets())
+	self.wndFocusFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_FocusFrame"):GetAnchorOffsets())
+	self.wndToTFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_ToTFrame"):GetAnchorOffsets())
+	
+	self.wndPlayerBuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerBuffs"):GetAnchorOffsets())
+	self.wndPlayerDebuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerDebuffs"):GetAnchorOffsets())
+	self.wndTargetBuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetBuffs"):GetAnchorOffsets())
+	self.wndTargetDebuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetDebuffs"):GetAnchorOffsets())
 end
 
 local ForgeUI_UnitFramesInst = ForgeUI_UnitFrames:new()

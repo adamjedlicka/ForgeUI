@@ -75,12 +75,9 @@ function ForgeUI_SprintDash:ForgeAPI_AfterRestore()
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndDashMeter, "ForgeUI_SprintDash_Dash", self.wndMovables:FindChild("Movable_DashMeter"))
 
-	self.wndContainers.Container:FindChild("SprintMeter_Color"):SetTextColor(ApolloColor.new("ff" .. self.tSettings.sprintColor))
-	self.wndContainers.Container:FindChild("SprintMeter_Color"):SetText(self.tSettings.sprintColor)
-	self.wndContainers.Container:FindChild("DashMeter_Color"):SetTextColor(ApolloColor.new("ff" .. self.tSettings.dashColor))
-	self.wndContainers.Container:FindChild("DashMeter_Color"):SetText(self.tSettings.dashColor)
-	self.wndContainers.Container:FindChild("DashMeter_Color2"):SetTextColor(ApolloColor.new("ff" .. self.tSettings.dashColor2))
-	self.wndContainers.Container:FindChild("DashMeter_Color2"):SetText(self.tSettings.dashColor2)
+	ForgeUI.ColorBoxChanged(self.wndContainers["Container"]:FindChild("SprintMeter_Color"), self.tSettings.sprintColor, "sprintColor")
+	ForgeUI.ColorBoxChanged(self.wndContainers["Container"]:FindChild("DashMeter_Color"), self.tSettings.dashColor, "dashColor")
+	ForgeUI.ColorBoxChanged(self.wndContainers["Container"]:FindChild("DashMeter_Color2"), self.tSettings.dashColor2, "dashColor2")
 end
 
 function ForgeUI_SprintDash:ForgeAPI_BeforeSave()
@@ -89,12 +86,10 @@ end
 
 function ForgeUI_SprintDash:ForgeAPI_OnUnlockElements()
 	self.wndMovables:Show(true)
-	self.wndSprintMeter:Show(false)
 end
 
 function ForgeUI_SprintDash:ForgeAPI_OnLockElements()
 	self.wndMovables:Show(false)
-	self.wndSprintMeter:Show(true)
 end
 
 -------------------------------------------------------------------------------
@@ -155,27 +150,11 @@ end
 ---------------------------------------------------------------------------------------------------
 -- Container Functions
 ---------------------------------------------------------------------------------------------------
-
-function ForgeUI_SprintDash:ColorBoxReturn( wndHandler, wndControl, strText )
-	wndControl:SetTextColor(ApolloColor.new("ff" .. wndControl:GetText()))
-	if(wndControl:GetName() == "SprintMeter_Color") then
-		self.tSettings.sprintColor = wndControl:GetText()
-	end if(wndControl:GetName() == "DashMeter_Color") then
-		self.tSettings.dashColor = wndControl:GetText()
-	end if(wndControl:GetName() == "DashMeter_Color2") then
-		self.tSettings.dashColor2 = wndControl:GetText()
-	end
-end
-
 local ForgeUI_SprintDashInst = ForgeUI_SprintDash:new()
 ForgeUI_SprintDashInst:Init()
 
-
-
-
-
-
-
-
-
+function ForgeUI_SprintDash:OnEditBoxChanged( wndHandler, wndControl, strText )
+	local tmpWnd = ForgeUI.ColorBoxChanged(wndControl)
+	self.tSettings[tmpWnd:GetData()] = tmpWnd:GetText()
+end
 

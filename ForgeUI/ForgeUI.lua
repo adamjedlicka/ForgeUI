@@ -5,7 +5,7 @@ local ForgeUI = {}
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
-VERSION = "0.0.2"
+VERSION = "0.0.4"
 AUTHOR = "WintyBadass"
 API_VERSION = 1
 
@@ -108,13 +108,21 @@ function ForgeUI:OnDocLoaded()
 	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_Core")
 	
 	bCanRegisterAddons = true
+	
+	for _, tAddon in pairs(tAddonsToRegister) do -- loading not registered addons
+		ForgeUI.RegisterAddon(tAddon)
+	end
+	
 	self:Initialize()
 end
 
 function ForgeUI:Initialize()
-	for _, tAddon in pairs(tAddonsToRegister) do -- loading not registered addons
-		ForgeUI.RegisterAddon(tAddon)
-	end
+	ForgeUI.ColorBoxChanged(self.wndContainers.ForgeUI_General:FindChild("ClassColor_Engineer"):FindChild("EditBox"), tSettings.classColors.engineer, "engineer")
+	ForgeUI.ColorBoxChanged(self.wndContainers.ForgeUI_General:FindChild("ClassColor_Esper"):FindChild("EditBox"), tSettings.classColors.esper, "esper")
+	ForgeUI.ColorBoxChanged(self.wndContainers.ForgeUI_General:FindChild("ClassColor_Spellslinger"):FindChild("EditBox"), tSettings.classColors.spellslinger, "spellslinger")
+	ForgeUI.ColorBoxChanged(self.wndContainers.ForgeUI_General:FindChild("ClassColor_Stalker"):FindChild("EditBox"), tSettings.classColors.stalker, "stalker")
+	ForgeUI.ColorBoxChanged(self.wndContainers.ForgeUI_General:FindChild("ClassColor_Medic"):FindChild("EditBox"), tSettings.classColors.medic, "medic")
+	ForgeUI.ColorBoxChanged(self.wndContainers.ForgeUI_General:FindChild("ClassColor_Warrior"):FindChild("EditBox"), tSettings.classColors.warrior, "warrior")
 end
 
 -----------------------------------------------------------------------------------------------
@@ -198,15 +206,6 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName, wndMovable)
 			tSettings_windowsPositions[strName].right,
 			tSettings_windowsPositions[strName].bottom
 		)
-		
-		if wndMovable ~= nil then
-			wndMovable:SetAnchorOffsets(
-				tSettings_windowsPositions[strName].left,
-				tSettings_windowsPositions[strName].top,
-				tSettings_windowsPositions[strName].right,
-				tSettings_windowsPositions[strName].bottom
-			)
-		end
 	else
 		local nLeft, nTop, nRight, nBottom = wnd:GetAnchorOffsets()
 		tSettings_windowsPositions[strName] = {
@@ -216,10 +215,43 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName, wndMovable)
 			bottom = nBottom
 		}
 	end
+	if wndMovable ~= nil then
+		wndMovable:SetAnchorOffsets(wnd:GetAnchorOffsets())
+		wndMovable:SetAnchorPoints(wnd:GetAnchorPoints())
+	end
 end
 
-function ForgeUI.GetSettings()
-	return tSettings
+function ForgeUI.GetSettings(arg)
+	if arg ~= nil then
+		return tSettings[arg]
+	else
+		return tSettings
+	end
+end
+
+function ForgeUI.SetSettings(str)
+	tSettings.classColors.warrior = str
+end
+
+function ForgeUI.ColorBoxChanged(wndControl, settings, data)
+	if settings ~= nil then
+		wndControl:SetText(settings)
+		wndControl:SetTextColor("ff" .. settings)
+	end
+	
+	if data ~= nil then
+		wndControl:SetData(data)
+	end
+	
+	local colorString = wndControl:GetText()
+		
+	if string.len(colorString) > 6 then
+		wndControl:SetText(string.sub(colorString, 0, 6))
+	elseif string.len(colorString) == 6 then
+		wndControl:SetTextColor("ff" .. colorString)
+	end
+	
+	return wndControl
 end
 
 -----------------------------------------------------------------------------------------------
@@ -259,7 +291,7 @@ function ForgeUI:OnSave(eType)
 	return {
 		settings = tSett,
 		addons = tAdd,
-		windowsPositions = tSettings_windowsPositions
+		windowsPositions = tSettings_windowsPositions,
 	}
 end
 
@@ -358,6 +390,11 @@ end
 
 function ForgeUI:OnDefaultsButtonPressed( wndHandler, wndControl, eMouseButton )
 	ForgeUI.CreateConfirmWindow(self, self.ResetDefaults)
+end
+
+function ForgeUI:EditBoxChanged( wndHandler, wndControl, strText )
+	local tmpWnd = ForgeUI.ColorBoxChanged(wndControl)
+	tSettings.classColors[tmpWnd:GetData()] = tmpWnd:GetText()
 end
 
 ---------------------------------------------------------------------------------------------------
