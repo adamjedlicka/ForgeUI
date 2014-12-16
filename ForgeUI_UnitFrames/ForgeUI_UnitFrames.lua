@@ -37,7 +37,7 @@ function ForgeUI_UnitFrames:new(o)
 	
 	-- optional
 	self.tSettings = {
-		backgroundBarColor = "131313",
+		backgroundBarColor = "101010",
 		hpBarColor = "272727",
 		hpTextColor = "75CC26",
 		shieldBarColor = "0699F3",
@@ -138,8 +138,8 @@ function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	if unit == nil then 
 		self.wndTargetFrame:Show(false, true)
 		self.wndToTFrame:Show(false, true)
-		self.wndTargetBuffFrame:Show(false, true)
-		self.wndTargetDebuffFrame:Show(false)
+		self.wndTargetBuffFrame:SetUnit(nil)
+		self.wndTargetDebuffFrame:SetUnit(nil)
 		return
 	end
 
@@ -367,6 +367,8 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	
 	self.wndFocusFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
 	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
+	self.wndFocusFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+	self.wndFocusFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
 end
 
 function ForgeUI_UnitFrames:ForgeAPI_OnUnlockElements()
