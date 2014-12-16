@@ -86,6 +86,10 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	self.wndToTFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ToTFrame", "FixedHudStratumLow", self)
 	self.wndFocusFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_FocusFrame", "FixedHudStratumLow", self)
 	
+	self.wndHazardBreath = Apollo.LoadForm(self.xmlDoc, "ForgeUI_HazardBreath", "FixedHudStratumLow", self)
+	self.wndHazardHeat = Apollo.LoadForm(self.xmlDoc, "ForgeUI_HazardHeat", "FixedHudStratumLow", self)
+	self.wndHazardToxic = Apollo.LoadForm(self.xmlDoc, "ForgeUI_HazardToxic", "FixedHudStratumLow", self)
+	
 	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", "FixedHudStratumMedium", self)
 	self.wndMovables:Show(false)
 end
@@ -99,6 +103,7 @@ function ForgeUI_UnitFrames:OnNextFrame()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
 	self:UpdatePlayerFrame(unitPlayer)
+	self:UpdateHazards(unitPlayer)
 end
 
 -- Player Frame
@@ -275,6 +280,34 @@ function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
 	end
 end
 
+function ForgeUI_UnitFrames:UpdateHazards(unit)
+	self.wndHazardHeat:Show(false)
+	self.wndHazardToxic:Show(false)
+	
+	for idx, tActiveHazard in ipairs(HazardsLib.GetHazardActiveList()) do
+		if tActiveHazard.eHazardType == HazardsLib.HazardType_Radiation and self.luaRadiation.showFrame == 1 then
+			self.wndHazardToxic:Show(true)
+			self.wndHazardToxic:SetMax(tActiveHazard.fMaxValue)
+			self.wndHazardToxic:SetProgress(tActiveHazard.fMeterValue)
+		end
+		if tActiveHazard.eHazardType == HazardsLib.HazardType_Temperature and self.luaTemperature.showFrame == 1 then
+			self.wndHazardToxic:Show(true)
+			self.wndHazardToxic:SetMax(tActiveHazard.fMaxValue)
+			self.wndHazardToxic:SetProgress(tActiveHazard.fMeterValue)
+		end
+	end
+end
+
+function ForgeUI_UnitFrames:OnBreathChanged(nBreath)
+	if nBreath == 100 then
+		self.wndHazardBreath:Show(false)
+	else
+		self.wndHazardBreath:Show(true)
+		self.wndHazardBreath:FindChild("ProgressBar"):SetMax(100)
+		self.wndHazardBreath:FindChild("ProgressBar"):SetProgress(nBreath)
+	end
+end
+
 -----------------------------------------------------------------------------------------------
 -- On character created
 -----------------------------------------------------------------------------------------------
@@ -301,7 +334,8 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 		self.playerClass = "warrior"
 	end
 	
-	Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNextFrame", self) 
+	Apollo.RegisterEventHandler("VarChange_FrameCount", 	"OnNextFrame", self)
+	Apollo.RegisterEventHandler("BreathChanged",			"OnBreathChanged", self)
 end
 
 function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
