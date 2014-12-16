@@ -117,6 +117,9 @@ function ForgeUI_UnitFrames:UpdatePlayerFrame(unit)
 	self:UpdateAbsorbBar(unit, self.wndPlayerFrame)
 	
 	self.wndPlayerFrame:SetData(unit)
+	
+	self.wndPlayerBuffFrame:SetUnit(unit)
+	self.wndPlayerDebuffFrame:SetUnit(unit)
 		
 	self:UpdateTargetFrame(unit)
 	self:UpdateFocusFrame(unit)
@@ -296,9 +299,6 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 	elseif eClassId == GameLib.CodeEnumClass.Warrior then
 		self.playerClass = "warrior"
 	end
-	
-	self.wndPlayerBuffFrame:SetUnit(unitPlayer)
-	self.wndPlayerDebuffFrame:SetUnit(unitPlayer)
 	
 	Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNextFrame", self) 
 end
