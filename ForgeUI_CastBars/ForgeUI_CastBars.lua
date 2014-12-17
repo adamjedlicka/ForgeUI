@@ -51,7 +51,9 @@ function ForgeUI_CastBars:ForgeAPI_AfterRegistration()
 	local wnd = ForgeUI.AddItemButton(self, "Cast bars")
 	
 	self.wndPlayerCastBar = Apollo.LoadForm(self.xmlDoc, "PlayerCastBar", "FixedHudStratum", self)
+	self.wndPlayerCastBar:Show(false, true)
 	self.wndTargetCastBar = Apollo.LoadForm(self.xmlDoc, "TargetCastBar", "FixedHudStratum", self)
+	self.wndTargetCastBar:Show(false, true)
 end
 
 function ForgeUI_CastBars:OnNextFrame()
