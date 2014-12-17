@@ -30,7 +30,8 @@ function ForgeUI_CastBars:new(o)
 	self.tSettings = {
 		smoothBars = true,
 		backgroundBarColor = "101010",
-		castBarColor = "272727"
+		castBarColor = "272727",
+		durationBarColor = "FFCC00"
 	}
 	
 	self.cast = nil
@@ -63,15 +64,21 @@ function ForgeUI_CastBars:OnNextFrame()
 	self:UpdateCastBar(unitPlayer, self.wndPlayerCastBar)
 	
 	local unitTarget = unitPlayer:GetTarget()
-	if unitTarget == nil or not unitTarget:IsValid() then return end
+	if unitTarget ~= nil and unitTarget:IsValid() then
+		self:UpdateCastBar(unitTarget, self.wndTargetCastBar)
+	else
+		self.wndTargetCastBar:Show(false, true)
+	end
 	
-	self:UpdateCastBar(unitTarget, self.wndTargetCastBar)
+	if self.cast ~= nil then
+		local fTimeLeft = 1-GameLib.GetSpellThresholdTimePrcntDone(self.cast.id)
+		self.wndPlayerCastBar:FindChild("DurationBar"):SetProgress(fTimeLeft)
+	else
+		self.wndPlayerCastBar:FindChild("DurationBar"):SetProgress(0)
+	end
 end
 
 function ForgeUI_CastBars:OnStartSpellThreshold(idSpell, nMaxThresholds, eCastMethod)
-	Print("==========================")
-	Print(" Start - ID: " .. idSpell .. " Thresh: " .. nMaxThresholds .. " method: " .. eCastMethod)
-
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
@@ -79,6 +86,7 @@ function ForgeUI_CastBars:OnStartSpellThreshold(idSpell, nMaxThresholds, eCastMe
 	
 	if self.cast == nil then
 		self.cast = {}
+		self.cast.id = idSpell
 		self.cast.strSpellName = splObject:GetName()
 		self.cast.nThreshold = 1
 		self.cast.nMaxThreshold = nMaxThresholds
@@ -93,8 +101,6 @@ function ForgeUI_CastBars:OnStartSpellThreshold(idSpell, nMaxThresholds, eCastMe
 end
 
 function ForgeUI_CastBars:OnUpdateSpellThreshold(idSpell, nNewThreshold)
-	Print(" Update - ID: " .. idSpell .. " Thresh: " .. nNewThreshold)
-
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 
@@ -103,13 +109,13 @@ function ForgeUI_CastBars:OnUpdateSpellThreshold(idSpell, nNewThreshold)
 	
 	self.wndPlayerCastBar:FindChild("SpellName"):SetText(strSpellName)
 	self.wndPlayerCastBar:FindChild("TickBar"):SetProgress(self.cast.nMaxThreshold - nNewThreshold)
+	
+	self.wndPlayerCastBar:FindChild("TickBar"):SetProgress(self.cast.nMaxThreshold - nNewThreshold)
+	
 	self.wndPlayerCastBar:FindChild("CastTime"):SetText(nNewThreshold)
 end
 
 function ForgeUI_CastBars:OnClearSpellThreshold(idSpell)
-	Print(" Clear - ID: " .. idSpell)
-	Print("==========================")
-
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
@@ -167,6 +173,7 @@ end
 function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	self.wndPlayerCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
 	self.wndPlayerCastBar:FindChild("TickBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
+	self.wndPlayerCastBar:FindChild("DurationBar"):SetBarColor("FF" .. self.tSettings.durationBarColor)
 	
 	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
 	
