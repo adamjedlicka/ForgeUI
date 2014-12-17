@@ -320,6 +320,10 @@ end
 
 function ForgeUI:OnUnlockElements()
 	for name, addon in pairs(tAddons) do
+		if addon.wndMovables ~= nil then
+			addon.wndMovables:Show(true, true)
+		end
+	
 		if addon.ForgeAPI_OnUnlockElements ~= nil then
 			addon:ForgeAPI_OnUnlockElements() -- Forge API OnUnlockElements
 		end
@@ -328,6 +332,10 @@ end
 
 function ForgeUI:OnLockElements()
 	for _, addon in pairs(tAddons) do
+		if addon.wndMovables ~= nil then
+			addon.wndMovables:Show(false, true)
+		end
+	
 		if addon.ForgeAPI_OnLockElements ~= nil then
 			addon:ForgeAPI_OnLockElements() -- Forge API OnLockElements
 		end

@@ -29,7 +29,7 @@ function ForgeUI_CastBars:new(o)
 	-- optional
 	self.tSettings = {
 		smoothBars = true,
-		backgroundBarColor = "101010",
+		backgroundColor = "101010",
 		castBarColor = "272727",
 		durationBarColor = "FFCC00"
 	}
@@ -55,6 +55,8 @@ function ForgeUI_CastBars:ForgeAPI_AfterRegistration()
 	self.wndPlayerCastBar:Show(false, true)
 	self.wndTargetCastBar = Apollo.LoadForm(self.xmlDoc, "TargetCastBar", "FixedHudStratum", self)
 	self.wndTargetCastBar:Show(false, true)
+	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", nil, self) 
 end
 
 function ForgeUI_CastBars:OnNextFrame()
@@ -171,10 +173,15 @@ function ForgeUI_CastBars:OnDocLoaded()
 end
 
 function ForgeUI_CastBars:ForgeAPI_AfterRestore()
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerCastBar, "ForgeUI_CastBars_PlayerCastBar", self.wndMovables:FindChild("Movable_PlayerCastBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetCastBar, "ForgeUI_CastBars_TargetCastBar", self.wndMovables:FindChild("Movable_TargetCastBar"))
+
+	self.wndPlayerCastBar:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
 	self.wndPlayerCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
 	self.wndPlayerCastBar:FindChild("TickBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
 	self.wndPlayerCastBar:FindChild("DurationBar"):SetBarColor("FF" .. self.tSettings.durationBarColor)
 	
+	self.wndTargetCastBar:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
 	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
 	
 	if self.tSettings.smoothBars == true then
@@ -185,6 +192,15 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	Apollo.RegisterEventHandler("StartSpellThreshold", 	"OnStartSpellThreshold", self)
 	Apollo.RegisterEventHandler("ClearSpellThreshold", 	"OnClearSpellThreshold", self)
 	Apollo.RegisterEventHandler("UpdateSpellThreshold", "OnUpdateSpellThreshold", self)
+end
+
+---------------------------------------------------------------------------------------------------
+-- Movables Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_CastBars:OnWindowMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	self.wndPlayerCastBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerCastBar"):GetAnchorOffsets())
+	self.wndTargetCastBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetCastBar"):GetAnchorOffsets())
 end
 
 -----------------------------------------------------------------------------------------------
