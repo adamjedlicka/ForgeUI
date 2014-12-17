@@ -130,6 +130,7 @@ function ForgeUI_CastBars:UpdateCastBar(unit, wnd)
 		wnd:Show(true, true)
 	elseif self.cast == nil then
 		wnd:Show(false, true)
+		wnd:FindChild("CastBar"):SetProgress(0)
 	end
 end
 
