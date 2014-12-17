@@ -84,14 +84,6 @@ function ForgeUI_SprintDash:ForgeAPI_BeforeSave()
 
 end
 
-function ForgeUI_SprintDash:ForgeAPI_OnUnlockElements()
-	self.wndMovables:Show(true)
-end
-
-function ForgeUI_SprintDash:ForgeAPI_OnLockElements()
-	self.wndMovables:Show(false)
-end
-
 -------------------------------------------------------------------------------
 -- Event handlers
 -------------------------------------------------------------------------------

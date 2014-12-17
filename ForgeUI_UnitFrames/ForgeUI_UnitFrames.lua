@@ -90,8 +90,7 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	self.wndHazardHeat = Apollo.LoadForm(self.xmlDoc, "ForgeUI_HazardHeat", "FixedHudStratumLow", self)
 	self.wndHazardToxic = Apollo.LoadForm(self.xmlDoc, "ForgeUI_HazardToxic", "FixedHudStratumLow", self)
 	
-	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", "FixedHudStratumMedium", self)
-	self.wndMovables:Show(false)
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", nil, self)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -379,16 +378,6 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
 	self.wndFocusFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
 	self.wndFocusFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
-end
-
-function ForgeUI_UnitFrames:ForgeAPI_OnUnlockElements()
-	self.wndMovables:Show(true)
-	--self.wndPlayerFrame:Show(false)
-end
-
-function ForgeUI_UnitFrames:ForgeAPI_OnLockElements()
-	self.wndMovables:Show(false)
-	--self.wndPlayerFrame:Show(true)
 end
 
 -----------------------------------------------------------------------------------------------
