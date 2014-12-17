@@ -106,6 +106,7 @@ function ForgeUI_CastBars:OnClearSpellThreshold(idSpell)
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
 	self.wndPlayerCastBar:Show(false, true)
+	self.wndPlayerCastBar:FindChild("TickBar"):SetProgress(0)
 	
 	self.cast = nil
 end
