@@ -2,14 +2,14 @@
 
 `ForgeUI` is WildStar addon pack for replacing default UI elements.
 
-##Downloads
+###Downloads
 
-* ForgeUI - [Download](https://github.com/adamjedlicka/ForgeUI/releases)
+* ForgeUI v0.1.0 - [Download](https://github.com/adamjedlicka/ForgeUI/releases/download/v0.1.0/ForgeUI_0.1.0.zip)
 
-##License
+###License
 
 `ForgeUI`'s code uses the MIT license, see our `LICENSE` file.
 
-##Support
+###Support
 
 `ForgeUI` is inspired by [ElvUI](http://www.tukui.org/dl.php)
