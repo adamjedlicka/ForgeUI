@@ -5,7 +5,7 @@ local ForgeUI = {}
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
-VERSION = "0.0.4f"
+VERSION = "0.1.0"
 AUTHOR = "WintyBadass"
 API_VERSION = 1
 
@@ -343,10 +343,10 @@ end
 ---------------------------------------------------------------------------------------------------
 function ForgeUI:SetActiveItem(wndControl)
 	wndItemContainer2:Show(false)
+	wndActiveItem:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("white")
+	wndActiveItem = wndControl
+	wndControl:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("xkcdFireEngineRed")
 	if wndControl:GetData().itemContainer ~= nil then
-		wndActiveItem:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("white")
-		wndActiveItem = wndControl
-		wndControl:GetParent():FindChild("ForgeUI_Item_Text"):SetTextColor("xkcdFireEngineRed")
 		wndItemContainer2 = wndControl:GetData().itemContainer
 		wndItemContainer2:Show(true)
 	else
