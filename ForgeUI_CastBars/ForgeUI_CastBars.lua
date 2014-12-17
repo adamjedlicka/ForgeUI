@@ -69,6 +69,9 @@ function ForgeUI_CastBars:OnNextFrame()
 end
 
 function ForgeUI_CastBars:OnStartSpellThreshold(idSpell, nMaxThresholds, eCastMethod)
+	Print("==========================")
+	Print(" Start - ID: " .. idSpell .. " Thresh: " .. nMaxThresholds .. " method: " .. eCastMethod)
+
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
@@ -90,6 +93,8 @@ function ForgeUI_CastBars:OnStartSpellThreshold(idSpell, nMaxThresholds, eCastMe
 end
 
 function ForgeUI_CastBars:OnUpdateSpellThreshold(idSpell, nNewThreshold)
+	Print(" Update - ID: " .. idSpell .. " Thresh: " .. nNewThreshold)
+
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 
@@ -102,6 +107,9 @@ function ForgeUI_CastBars:OnUpdateSpellThreshold(idSpell, nNewThreshold)
 end
 
 function ForgeUI_CastBars:OnClearSpellThreshold(idSpell)
+	Print(" Clear - ID: " .. idSpell)
+	Print("==========================")
+
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
