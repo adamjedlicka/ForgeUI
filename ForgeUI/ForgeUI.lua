@@ -229,10 +229,6 @@ function ForgeUI.GetSettings(arg)
 	end
 end
 
-function ForgeUI.SetSettings(str)
-	tSettings.classColors.warrior = str
-end
-
 function ForgeUI.ColorBoxChanged(wndControl, settings, data)
 	if settings ~= nil then
 		wndControl:SetText(settings)
