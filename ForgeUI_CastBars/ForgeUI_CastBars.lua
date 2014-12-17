@@ -68,6 +68,7 @@ function ForgeUI_CastBars:OnNextFrame()
 	local unitTarget = unitPlayer:GetTarget()
 	if unitTarget ~= nil and unitTarget:IsValid() then
 		self:UpdateCastBar(unitTarget, self.wndTargetCastBar)
+		self:UpdateInterruptArmor(unitTarget, self.wndTargetCastBar)
 	else
 		self.wndTargetCastBar:Show(false, true)
 	end
@@ -148,6 +149,24 @@ function ForgeUI_CastBars:UpdateCastBar(unit, wnd)
 	elseif self.cast == nil then
 		wnd:Show(false, true)
 		wnd:FindChild("CastBar"):SetProgress(0)
+	end
+end
+
+function ForgeUI_CastBars:UpdateInterruptArmor(unit, wnd)
+	--sprites: HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite
+	nValue = unit:GetInterruptArmorValue()
+	nMax = unit:GetInterruptArmorMax()
+	if nMax == 0 or nValue == nil or unit:IsDead() then
+		wnd:FindChild("InterruptArmor"):Show(false, true)
+	else
+		wnd:FindChild("InterruptArmor"):Show(true, true)
+		if nMax == -1 then
+			wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
+			wnd:FindChild("InterruptArmor_Value"):SetText("")
+		elseif nMax > 0 then
+			wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
+			wnd:FindChild("InterruptArmor_Value"):SetText(nValue)
+		end
 	end
 end
 
