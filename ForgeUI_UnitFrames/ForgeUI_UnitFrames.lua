@@ -28,7 +28,7 @@ function ForgeUI_UnitFrames:new(o)
 
     -- mandatory 
     self.api_version = 1
-	self.version = "0.0.1"
+	self.version = "0.1.0"
 	self.author = "WintyBadass"
 	self.strAddonName = "ForgeUI_UnitFrames"
 	self.strDisplayName = "Unit frames"
@@ -254,7 +254,6 @@ function ForgeUI_UnitFrames:UpdateAbsorbBar(unit, wnd)
 			wnd:FindChild("Absorb_ProgressBar"):SetProgress(unit:GetAbsorptionValue())
 			wnd:FindChild("Absorb_TextValue"):SetText(ForgeUI.ShortNum(unit:GetAbsorptionValue()))
 		end
-		wnd:FindChild("AbsorbBar"):Show(false)
 	else
 		wnd:FindChild("AbsorbBar"):Show(false)
 	end
@@ -341,8 +340,17 @@ end
 
 function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerFrame, "ForgeUI_UnitFrames_PlayerFrame", self.wndMovables:FindChild("Movable_PlayerFrame"))
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerFrame:FindChild("ShieldBar"), "ForgeUI_UnitFrames_PlayerFrame_ShieldBar", self.wndMovables:FindChild("Movable_PlayerFrame_ShieldBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerFrame:FindChild("AbsorbBar"), "ForgeUI_UnitFrames_PlayerFrame_AbsorbBar", self.wndMovables:FindChild("Movable_PlayerFrame_AbsorbBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndPlayerFrame:FindChild("InterruptArmor"), "ForgeUI_UnitFrames_PlayerFrame_IA", self.wndMovables:FindChild("Movable_PlayerFrame_IA"))
+	
 	ForgeUI.RegisterWindowPosition(self, self.wndTargetFrame, "ForgeUI_UnitFrames_TargetFrame", self.wndMovables:FindChild("Movable_TargetFrame"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetFrame:FindChild("ShieldBar"), "ForgeUI_UnitFrames_TargetFrame_ShieldBar", self.wndMovables:FindChild("Movable_TargetFrame_ShieldBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetFrame:FindChild("AbsorbBar"), "ForgeUI_UnitFrames_TargetFrame_AbsorbBar", self.wndMovables:FindChild("Movable_TargetFrame_AbsorbBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndTargetFrame:FindChild("InterruptArmor"), "ForgeUI_UnitFrames_TargetFrame_IA", self.wndMovables:FindChild("Movable_TargetFrame_IA"))
+	
 	ForgeUI.RegisterWindowPosition(self, self.wndFocusFrame, "ForgeUI_UnitFrames_FocusFrame", self.wndMovables:FindChild("Movable_FocusFrame"))
+	
 	ForgeUI.RegisterWindowPosition(self, self.wndToTFrame, "ForgeUI_UnitFrames_ToTFrame", self.wndMovables:FindChild("Movable_ToTFrame"))
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerBuffFrame, "ForgeUI_UnitFrames_PlayerBuffs", self.wndMovables:FindChild("Movable_PlayerBuffs"))
@@ -435,8 +443,17 @@ end
 
 function ForgeUI_UnitFrames:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
 	self.wndPlayerFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerFrame"):GetAnchorOffsets())
+	self.wndPlayerFrame:FindChild("ShieldBar"):SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerFrame_ShieldBar"):GetAnchorOffsets())
+	self.wndPlayerFrame:FindChild("AbsorbBar"):SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerFrame_AbsorbBar"):GetAnchorOffsets())
+	self.wndPlayerFrame:FindChild("InterruptArmor"):SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerFrame_IA"):GetAnchorOffsets())
+	
 	self.wndTargetFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetFrame"):GetAnchorOffsets())
+	self.wndTargetFrame:FindChild("ShieldBar"):SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetFrame_ShieldBar"):GetAnchorOffsets())
+	self.wndTargetFrame:FindChild("AbsorbBar"):SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetFrame_AbsorbBar"):GetAnchorOffsets())
+	self.wndTargetFrame:FindChild("InterruptArmor"):SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetFrame_IA"):GetAnchorOffsets())
+	
 	self.wndFocusFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_FocusFrame"):GetAnchorOffsets())
+	
 	self.wndToTFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_ToTFrame"):GetAnchorOffsets())
 	
 	self.wndPlayerBuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerBuffs"):GetAnchorOffsets())
