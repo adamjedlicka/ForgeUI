@@ -50,7 +50,7 @@ function ForgeUI_CastBars:Init()
 end
  
 function ForgeUI_CastBars:ForgeAPI_AfterRegistration()
-	local wnd = ForgeUI.AddItemButton(self, "Cast bars")
+	local wnd = ForgeUI.AddItemButton(self, "Cast bars", "Container")
 	
 	self.wndPlayerCastBar = Apollo.LoadForm(self.xmlDoc, "PlayerCastBar", "FixedHudStratum", self)
 	self.wndPlayerCastBar:Show(false, true)
@@ -159,6 +159,7 @@ function ForgeUI_CastBars:UpdateMoOBar(unit, wnd)
 	if unit == nil or wnd == nil or unit:IsDead() then return end
 	
 	local time = unit:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
+	local pl = GameLib.GetPlayerUnit()
 	
 	if time > 0 then
 		maxTime = time > maxTime and time or maxTime
@@ -228,6 +229,7 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
 	self.wndTargetCastBar:FindChild("MoOBar"):SetBarColor("FF" .. self.tSettings.mooBarColor)
 	
+	self.wndContainers["Container"]:FindChild("SmoothBars_Button"):SetCheck(self.tSettings.smoothBars)
 	if self.tSettings.smoothBars == true then
 		Apollo.RegisterEventHandler("NextFrame", 	"OnNextFrame", self)
 	else
@@ -236,6 +238,10 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	Apollo.RegisterEventHandler("StartSpellThreshold", 	"OnStartSpellThreshold", self)
 	Apollo.RegisterEventHandler("ClearSpellThreshold", 	"OnClearSpellThreshold", self)
 	Apollo.RegisterEventHandler("UpdateSpellThreshold", "OnUpdateSpellThreshold", self)
+end
+
+function ForgeUI_CastBars:ForgeAPI_BeforeSave()
+	self.tSettings.smoothBars = self.wndContainers["Container"]:FindChild("SmoothBars_Button"):IsChecked()
 end
 
 ---------------------------------------------------------------------------------------------------
