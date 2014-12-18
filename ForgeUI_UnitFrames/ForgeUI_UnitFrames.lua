@@ -277,6 +277,7 @@ function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
 	end
 end
 
+-- uodate hazard bars
 function ForgeUI_UnitFrames:UpdateHazards(unit)
 	self.wndHazardHeat:Show(false)
 	self.wndHazardToxic:Show(false)
@@ -286,13 +287,13 @@ function ForgeUI_UnitFrames:UpdateHazards(unit)
 			self.wndHazardToxic:Show(true)
 			self.wndHazardToxic:FindChild("ProgressBar"):SetMax(tActiveHazard.fMaxValue)
 			self.wndHazardToxic:FindChild("ProgressBar"):SetProgress(tActiveHazard.fMeterValue)
-			self.wndHazardHeat:FindChild("Text"):SetText("Radiation - " .. tActiveHazard.fMeterValue)
+			self.wndHazardHeat:FindChild("Text"):SetText("Radiation - " .. ForgeUI.Round((tActiveHazard.fMeterValue / tActiveHazard.fMaxValue * 100), 0))
 		end
 		if tActiveHazard.eHazardType == HazardsLib.HazardType_Temperature then
 			self.wndHazardHeat:Show(true)
 			self.wndHazardHeat:FindChild("ProgressBar"):SetMax(tActiveHazard.fMaxValue)
 			self.wndHazardHeat:FindChild("ProgressBar"):SetProgress(tActiveHazard.fMeterValue)
-			self.wndHazardHeat:FindChild("Text"):SetText("Heat - " .. tActiveHazard.fMeterValue)
+			self.wndHazardHeat:FindChild("Text"):SetText("Heat - " .. ForgeUI.Round((tActiveHazard.fMeterValue / tActiveHazard.fMaxValue * 100), 0))
 		end
 	end
 end
