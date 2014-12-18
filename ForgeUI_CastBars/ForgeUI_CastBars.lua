@@ -31,6 +31,7 @@ function ForgeUI_CastBars:new(o)
 		smoothBars = true,
 		backgroundColor = "101010",
 		castBarColor = "272727",
+		mooBarColor = "BC00BB",
 		durationBarColor = "FFCC00"
 	}
 	
@@ -68,6 +69,7 @@ function ForgeUI_CastBars:OnNextFrame()
 	local unitTarget = unitPlayer:GetTarget()
 	if unitTarget ~= nil and unitTarget:IsValid() then
 		self:UpdateCastBar(unitTarget, self.wndTargetCastBar)
+		self:UpdateMoOBar(unitTarget, self.wndTargetCastBar)
 		self:UpdateInterruptArmor(unitTarget, self.wndTargetCastBar)
 	else
 		self.wndTargetCastBar:Show(false, true)
@@ -106,7 +108,7 @@ end
 function ForgeUI_CastBars:OnUpdateSpellThreshold(idSpell, nNewThreshold)
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
-
+	
 	local splObject = GameLib.GetSpell(idSpell)
 	local strSpellName = splObject:GetName()
 	
@@ -149,6 +151,28 @@ function ForgeUI_CastBars:UpdateCastBar(unit, wnd)
 	elseif self.cast == nil then
 		wnd:Show(false, true)
 		wnd:FindChild("CastBar"):SetProgress(0)
+	end
+end
+
+local maxTime = 0
+function ForgeUI_CastBars:UpdateMoOBar(unit, wnd)
+	if unit == nil or wnd == nil or unit:IsDead() then return end
+	
+	local time = unit:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
+	
+	if time > 0 then
+		maxTime = time > maxTime and time or maxTime
+	
+		wnd:FindChild("MoOBar"):SetMax(maxTime)
+		wnd:FindChild("MoOBar"):SetProgress(time)
+		
+		wnd:FindChild("SpellName"):SetText("MoO")
+		wnd:FindChild("CastTime"):SetText(ForgeUI.Round(time, 1))
+		
+		wnd:Show(true, true)
+	else
+		wnd:FindChild("MoOBar"):SetProgress(0)
+		maxTime = 0
 	end
 end
 
@@ -202,6 +226,7 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	
 	self.wndTargetCastBar:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
 	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
+	self.wndTargetCastBar:FindChild("MoOBar"):SetBarColor("FF" .. self.tSettings.mooBarColor)
 	
 	if self.tSettings.smoothBars == true then
 		Apollo.RegisterEventHandler("NextFrame", 	"OnNextFrame", self)
