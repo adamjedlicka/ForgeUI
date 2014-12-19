@@ -19,7 +19,7 @@ function ForgeUI_CastBars:new(o)
 
     -- mandatory 
     self.api_version = 1
-	self.version = "0.0.1"
+	self.version = "0.1.0"
 	self.author = "WintyBadass"
 	self.strAddonName = "ForgeUI_CastBars"
 	self.strDisplayName = "Unit frames"
