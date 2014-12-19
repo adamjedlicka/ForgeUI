@@ -4,6 +4,7 @@
 
 ###Downloads
 
+* **ForgeUI v0.1.1** - [Download](https://github.com/adamjedlicka/ForgeUI/releases/download/v0.1.1/ForgeUI.0.1.1.zip)
 * **ForgeUI v0.1.0** - [Download](https://github.com/adamjedlicka/ForgeUI/releases/download/v0.1.0/ForgeUI_0.1.0.zip)
 
 * **Latest development build** - [Download](https://github.com/adamjedlicka/ForgeUI/archive/development.zip)
