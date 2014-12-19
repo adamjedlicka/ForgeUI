@@ -37,6 +37,7 @@ function ForgeUI_UnitFrames:new(o)
 	
 	-- optional
 	self.tSettings = {
+		backgroundColor = "131313",
 		backgroundBarColor = "101010",
 		hpBarColor = "272727",
 		hpTextColor = "75CC26",
