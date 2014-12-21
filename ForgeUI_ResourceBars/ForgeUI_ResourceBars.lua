@@ -56,6 +56,11 @@ function ForgeUI_ResourceBars:new(o)
 			resourceColor1 = "1591DB",
 			resourceColor2 = "",
 			resourceColor3 = ""
+		},
+		medic = {
+			resourceColor1 = "98C723",
+			resourceColor2 = "FFE757",
+			resourceColor3 = ""
 		}
 	}
 	
@@ -112,6 +117,7 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 		self:OnEsperCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Medic then
 		self.playerClass = "medic"
+		self:OnMedicCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Spellslinger then
 		self.playerClass = "spellslinger"
 	elseif eClassId == GameLib.CodeEnumClass.Stalker then
@@ -210,6 +216,64 @@ function ForgeUI_ResourceBars:OnEsperUpdate()
 	self:UpdateFocus(unitPlayer)
 end
 
+-----------------------------------------------------------------------------------------------
+-- Medic
+-----------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnMedicCreated(unitPlayer)
+	self.playerMaxResource = unitPlayer:GetMaxResource(1)
+
+	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Medic", "FixedHudStratumHigh", self)
+	self.wndFocus = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Focus", "FixedHudStratumHigh", self)
+	
+	for i = 1, self.playerMaxResource do
+		self.wndResource:FindChild("ACU" .. i):SetBGColor("FF" .. self.tSettings.borderColor)
+		self.wndResource:FindChild("ACU" .. i):FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+		self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetMax(3)
+	end
+	
+	if self.tSettings.smoothBars then
+		Apollo.RegisterEventHandler("NextFrame", "OnMedicUpdate", self)
+	else
+		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnMedicUpdate", self)
+	end
+end
+
+function ForgeUI_ResourceBars:OnMedicUpdate()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	if unitPlayer == nil or not unitPlayer:IsValid() then return end
+	
+	local nResource = unitPlayer:GetResource(1)
+	
+	if unitPlayer:IsInCombat() or nResource < self.playerMaxResource then
+		for i = 1, self.playerMaxResource do
+			if nResource >= i then
+				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.medic.resourceColor1)
+				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetProgress(3)
+			else
+				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetProgress(0)
+				if (nResource + 1) == i then
+					local nAcu = 0
+				
+					for key, buff in pairs(unitPlayer:GetBuffs().arBeneficial) do
+						if buff.splEffect:GetId() == 42569 then 
+							nAcu = buff.nCount
+						end
+					end
+					
+					self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.medic.resourceColor2)
+					self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetProgress(nAcu)
+				end
+			end
+		end
+		
+		self.wndResource:Show(true, true)
+	else
+		self.wndResource:Show(false, true)
+	end
+	
+	self:UpdateFocus(unitPlayer)
+end
 
 -----------------------------------------------------------------------------------------------
 -- Stalker
