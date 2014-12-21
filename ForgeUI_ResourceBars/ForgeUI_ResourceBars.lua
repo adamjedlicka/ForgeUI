@@ -41,6 +41,11 @@ function ForgeUI_ResourceBars:new(o)
 			resourceColor1 = "E53805",
 			resourceColor2 = "EF0000",
 			resourceColor3 = ""
+		},
+		stalker = {
+			resourceColor1 = "D23EF4",
+			resourceColor2 = "",
+			resourceColor3 = ""
 		}
 	}
 	
@@ -98,11 +103,49 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 		self.playerClass = "spellslinger"
 	elseif eClassId == GameLib.CodeEnumClass.Stalker then
 		self.playerClass = "stalker"
+		self:OnStalkerCreated()
 	elseif eClassId == GameLib.CodeEnumClass.Warrior then
 		self.playerClass = "warrior"
 		self:OnWarriorCreated()
 	end
 end
+
+-----------------------------------------------------------------------------------------------
+-- Stalker
+-----------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnStalkerCreated()
+	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Stalker", "FixedHudStratumHigh", self)
+	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
+	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+	self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.stalker.resourceColor1)
+	self.wndResource:FindChild("ProgressBar"):SetMax(100)
+	
+	if self.tSettings.smoothBars then
+		Apollo.RegisterEventHandler("NextFrame", "OnStalkerUpdate", self)
+	else
+		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnStalkerUpdate", self)
+	end
+end
+
+function ForgeUI_ResourceBars:OnStalkerUpdate()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	if unitPlayer == nil or not unitPlayer:IsValid() then return end
+	
+	local nResource = unitPlayer:GetResource(3)
+	if unitPlayer:IsInCombat() or nResource < 100 then
+		self.wndResource:FindChild("ProgressBar"):SetProgress(nResource)
+		self.wndResource:FindChild("Value"):SetText(nResource)
+		
+		self.wndResource:Show(true, true)
+	else
+		self.wndResource:Show(false, true)
+	end
+end
+
+-----------------------------------------------------------------------------------------------
+-- Warrior
+-----------------------------------------------------------------------------------------------
 
 function ForgeUI_ResourceBars:OnWarriorCreated()
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Warrior", "FixedHudStratumHigh", self)
@@ -122,7 +165,7 @@ function ForgeUI_ResourceBars:OnWarriorUpdate()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
 	local nResource = unitPlayer:GetResource(1)
-	if unitPlayer:IsInCombat() and nResource > 0 then
+	if unitPlayer:IsInCombat() or nResource > 0 then
 		self.wndResource:FindChild("ProgressBar"):SetProgress(nResource)
 		self.wndResource:FindChild("Value"):SetText(nResource)
 		
