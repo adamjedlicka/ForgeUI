@@ -51,10 +51,16 @@ function ForgeUI_ResourceBars:new(o)
 			resourceColor1 = "00AEFF",
 			resourceColor2 = "FFB000",
 			resourceColor3 = ""
+		},
+		esper = {
+			resourceColor1 = "1591DB",
+			resourceColor2 = "",
+			resourceColor3 = ""
 		}
 	}
 	
 	self.playerClass = nil
+	self.playerMaxResource = nil
 
     return o
 end
@@ -103,6 +109,7 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 		self:OnEngineerCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Esper then
 		self.playerClass = "esper"
+		self:OnEsperCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Medic then
 		self.playerClass = "medic"
 	elseif eClassId == GameLib.CodeEnumClass.Spellslinger then
@@ -121,10 +128,12 @@ end
 -----------------------------------------------------------------------------------------------
 
 function ForgeUI_ResourceBars:OnEngineerCreated(unitPlayer)
+	self.playerMaxResource = unitPlayer:GetMaxResource(1)
+
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Engineer", "FixedHudStratumHigh", self)
 	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
 	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
-	self.wndResource:FindChild("ProgressBar"):SetMax(unitPlayer:GetMaxResource(1))
+	self.wndResource:FindChild("ProgressBar"):SetMax(self.playerMaxResource)
 	
 	if self.tSettings.smoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnEngineerUpdate", self)
@@ -155,10 +164,60 @@ function ForgeUI_ResourceBars:OnEngineerUpdate()
 end
 
 -----------------------------------------------------------------------------------------------
+-- Esper
+-----------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnEsperCreated(unitPlayer)
+	self.playerMaxResource = unitPlayer:GetMaxResource(1)
+
+	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Esper", "FixedHudStratumHigh", self)
+	self.wndFocus = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Focus", "FixedHudStratumHigh", self)
+	
+	for i = 1, self.playerMaxResource do
+		self.wndResource:FindChild("PSI" .. i):SetBGColor("FF" .. self.tSettings.borderColor)
+		self.wndResource:FindChild("PSI" .. i):FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+		self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.esper.resourceColor1)
+		self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetMax(1)
+	end
+	
+	if self.tSettings.smoothBars then
+		Apollo.RegisterEventHandler("NextFrame", "OnEsperUpdate", self)
+	else
+		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnEsperUpdate", self)
+	end
+end
+
+function ForgeUI_ResourceBars:OnEsperUpdate()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	if unitPlayer == nil or not unitPlayer:IsValid() then return end
+	
+	local nResource = unitPlayer:GetResource(1)
+	
+	if unitPlayer:IsInCombat() or nResource > 0 then
+		for i = 1, self.playerMaxResource do
+			if nResource >= i then
+				self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetProgress(1)
+			else
+				self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetProgress(0)
+			end
+		end
+		
+		self.wndResource:Show(true, true)
+	else
+		self.wndResource:Show(false, true)
+	end
+	
+	self:UpdateFocus(unitPlayer)
+end
+
+
+-----------------------------------------------------------------------------------------------
 -- Stalker
 -----------------------------------------------------------------------------------------------
 
-function ForgeUI_ResourceBars:OnStalkerCreated()
+function ForgeUI_ResourceBars:OnStalkerCreated(unitPlayer)
+	self.playerMaxResource = unitPlayer:GetMaxResource(1)
+
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Stalker", "FixedHudStratumHigh", self)
 	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
 	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
@@ -177,7 +236,7 @@ function ForgeUI_ResourceBars:OnStalkerUpdate()
 	if unitPlayer == nil or not unitPlayer:IsValid() then return end
 	
 	local nResource = unitPlayer:GetResource(3)
-	if unitPlayer:IsInCombat() or nResource < 100 then
+	if unitPlayer:IsInCombat() or nResource < self.playerMaxResource then
 		self.wndResource:FindChild("ProgressBar"):SetProgress(nResource)
 		self.wndResource:FindChild("Value"):SetText(nResource)
 		
@@ -191,11 +250,13 @@ end
 -- Warrior
 -----------------------------------------------------------------------------------------------
 
-function ForgeUI_ResourceBars:OnWarriorCreated()
+function ForgeUI_ResourceBars:OnWarriorCreated(unitPlayer)
+	self.playerMaxResource = unitPlayer:GetMaxResource(1)
+
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Warrior", "FixedHudStratumHigh", self)
 	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
 	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
-	self.wndResource:FindChild("ProgressBar"):SetMax(1000)
+	self.wndResource:FindChild("ProgressBar"):SetMax(self.playerMaxResource)
 	
 	if self.tSettings.smoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnWarriorUpdate", self)
@@ -222,6 +283,28 @@ function ForgeUI_ResourceBars:OnWarriorUpdate()
 		self.wndResource:Show(true, true)
 	else
 		self.wndResource:Show(false, true)
+	end
+end
+
+-----------------------------------------------------------------------------------------------
+-- focus
+-----------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:UpdateFocus(unitPlayer)
+	if unitPlayer == nil or not unitPlayer:IsValid() then return end
+	if self.wndFocus == nil then return end
+	
+	local nMana = unitPlayer:GetMana()
+	local nMaxMana = unitPlayer:GetMaxMana()
+	
+	if nMana < nMaxMana then
+		self.wndFocus:FindChild("ProgressBar"):SetMax(nMaxMana)
+		self.wndFocus:FindChild("ProgressBar"):SetProgress(nMana)
+		self.wndFocus:FindChild("Value"):SetText(ForgeUI.Round(nMana, 0))
+		
+		self.wndFocus:Show(true, true)
+	else
+		self.wndFocus:Show(false, true)
 	end
 end
 
