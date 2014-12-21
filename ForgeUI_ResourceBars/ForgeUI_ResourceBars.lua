@@ -46,6 +46,11 @@ function ForgeUI_ResourceBars:new(o)
 			resourceColor1 = "D23EF4",
 			resourceColor2 = "",
 			resourceColor3 = ""
+		},
+		engineer = {
+			resourceColor1 = "00AEFF",
+			resourceColor2 = "FFB000",
+			resourceColor3 = ""
 		}
 	}
 	
@@ -95,6 +100,7 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 	local eClassId = unitPlayer:GetClassId()
 	if eClassId == GameLib.CodeEnumClass.Engineer then
 		self.playerClass = "engineer"
+		self:OnEngineerCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Esper then
 		self.playerClass = "esper"
 	elseif eClassId == GameLib.CodeEnumClass.Medic then
@@ -103,10 +109,48 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 		self.playerClass = "spellslinger"
 	elseif eClassId == GameLib.CodeEnumClass.Stalker then
 		self.playerClass = "stalker"
-		self:OnStalkerCreated()
+		self:OnStalkerCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Warrior then
 		self.playerClass = "warrior"
-		self:OnWarriorCreated()
+		self:OnWarriorCreated(unitPlayer)
+	end
+end
+
+-----------------------------------------------------------------------------------------------
+-- Engineer
+-----------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnEngineerCreated(unitPlayer)
+	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Engineer", "FixedHudStratumHigh", self)
+	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
+	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+	self.wndResource:FindChild("ProgressBar"):SetMax(unitPlayer:GetMaxResource(1))
+	
+	if self.tSettings.smoothBars then
+		Apollo.RegisterEventHandler("NextFrame", "OnEngineerUpdate", self)
+	else
+		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnEngineerUpdate", self)
+	end
+end
+
+function ForgeUI_ResourceBars:OnEngineerUpdate()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	if unitPlayer == nil or not unitPlayer:IsValid() then return end
+	
+	local nResource = unitPlayer:GetResource(1)
+	if unitPlayer:IsInCombat() or nResource > 0 then
+		self.wndResource:FindChild("ProgressBar"):SetProgress(nResource)
+		self.wndResource:FindChild("Value"):SetText(nResource)
+		
+		if nResource < 30 or nResource > 70 then
+			self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.engineer.resourceColor1)
+		else
+			self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.engineer.resourceColor2)
+		end
+		
+		self.wndResource:Show(true, true)
+	else
+		self.wndResource:Show(false, true)
 	end
 end
 
