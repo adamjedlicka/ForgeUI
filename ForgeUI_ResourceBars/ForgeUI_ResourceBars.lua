@@ -93,11 +93,10 @@ function ForgeUI_ResourceBars:OnLoad()
 end
 
 function ForgeUI_ResourceBars:ForgeAPI_AfterRegistration()
-	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", nil, self)
 end
 
 function ForgeUI_ResourceBars:ForgeAPI_AfterRestore()
-
 	if GameLib.GetPlayerUnit() then
 		self:OnCharacterCreated()
 	else
@@ -131,7 +130,7 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 		self:OnStalkerCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Warrior then
 		self.playerClass = "warrior"
-		self:OnWarriorCreated(unitPlayer)
+		self:OnWarriorCreated(unitPlayer)	
 	end
 end
 
@@ -152,6 +151,8 @@ function ForgeUI_ResourceBars:OnEngineerCreated(unitPlayer)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnEngineerUpdate", self)
 	end
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndResource, "ForgeUI_ResourceBars_Resource", self.wndMovables:FindChild("Movable_Resource"))
 end
 
 function ForgeUI_ResourceBars:OnEngineerUpdate()
@@ -197,6 +198,9 @@ function ForgeUI_ResourceBars:OnEsperCreated(unitPlayer)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnEsperUpdate", self)
 	end
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndResource, "ForgeUI_ResourceBars_Resource", self.wndMovables:FindChild("Movable_Resource"))
+	ForgeUI.RegisterWindowPosition(self, self.wndFocus, "ForgeUI_ResourceBars_Focus", self.wndMovables:FindChild("Movable_Focus"))
 end
 
 function ForgeUI_ResourceBars:OnEsperUpdate()
@@ -243,6 +247,9 @@ function ForgeUI_ResourceBars:OnMedicCreated(unitPlayer)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnMedicUpdate", self)
 	end
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndResource, "ForgeUI_ResourceBars_Resource", self.wndMovables:FindChild("Movable_Resource"))
+	ForgeUI.RegisterWindowPosition(self, self.wndFocus, "ForgeUI_ResourceBars_Focus", self.wndMovables:FindChild("Movable_Focus"))
 end
 
 function ForgeUI_ResourceBars:OnMedicUpdate()
@@ -302,6 +309,9 @@ function ForgeUI_ResourceBars:OnSlingerCreated(unitPlayer)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnSlingerUpdate", self)
 	end
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndResource, "ForgeUI_ResourceBars_Resource", self.wndMovables:FindChild("Movable_Resource"))
+	ForgeUI.RegisterWindowPosition(self, self.wndFocus, "ForgeUI_ResourceBars_Focus", self.wndMovables:FindChild("Movable_Focus"))
 end
 
 function ForgeUI_ResourceBars:OnSlingerUpdate()
@@ -353,6 +363,8 @@ function ForgeUI_ResourceBars:OnStalkerCreated(unitPlayer)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnStalkerUpdate", self)
 	end
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndResource, "ForgeUI_ResourceBars_Resource", self.wndMovables:FindChild("Movable_Resource"))
 end
 
 function ForgeUI_ResourceBars:OnStalkerUpdate()
@@ -387,6 +399,8 @@ function ForgeUI_ResourceBars:OnWarriorCreated(unitPlayer)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnWarriorUpdate", self)
 	end
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndResource, "ForgeUI_ResourceBars_Resource", self.wndMovables:FindChild("Movable_Resource"))
 end
 
 function ForgeUI_ResourceBars:OnWarriorUpdate()
@@ -443,6 +457,14 @@ function ForgeUI_ResourceBars:OnDocLoaded()
 	end
 	
 	ForgeUI.RegisterAddon(self)
+end
+
+---------------------------------------------------------------------------------------------------
+-- Movables Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	self.wndResource:SetAnchorOffsets(wndControl:GetAnchorOffsets())
 end
 
 -----------------------------------------------------------------------------------------------

@@ -218,6 +218,8 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName, wndMovable)
 	if wndMovable ~= nil then
 		wndMovable:SetAnchorOffsets(wnd:GetAnchorOffsets())
 		wndMovable:SetAnchorPoints(wnd:GetAnchorPoints())
+		wndMovable:SetSprite("CRB_ActionBarIconSprites:sprActionBar_OrangeBorder")
+		wndMovable:SetBGColor("FFFF0000")
 	end
 end
 
