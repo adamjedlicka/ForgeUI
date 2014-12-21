@@ -61,6 +61,11 @@ function ForgeUI_ResourceBars:new(o)
 			resourceColor1 = "98C723",
 			resourceColor2 = "FFE757",
 			resourceColor3 = ""
+		},
+		slinger = {
+			resourceColor1 = "FFE757",
+			resourceColor2 = "E53805",
+			resourceColor3 = ""
 		}
 	}
 	
@@ -120,6 +125,7 @@ function ForgeUI_ResourceBars:OnCharacterCreated()
 		self:OnMedicCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Spellslinger then
 		self.playerClass = "spellslinger"
+		self:OnSlingerCreated(unitPlayer)
 	elseif eClassId == GameLib.CodeEnumClass.Stalker then
 		self.playerClass = "stalker"
 		self:OnStalkerCreated(unitPlayer)
@@ -272,6 +278,60 @@ function ForgeUI_ResourceBars:OnMedicUpdate()
 		self.wndResource:Show(false, true)
 	end
 	
+	self:UpdateFocus(unitPlayer)
+end
+
+-----------------------------------------------------------------------------------------------
+-- Slinger
+-----------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnSlingerCreated(unitPlayer)
+	self.playerMaxResource = unitPlayer:GetMaxResource(4)
+
+	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Slinger", "FixedHudStratumHigh", self)
+	self.wndFocus = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Focus", "FixedHudStratumHigh", self)
+	
+	for i = 1, 4 do
+		self.wndResource:FindChild("RUNE" .. i):SetBGColor("FF" .. self.tSettings.borderColor)
+		self.wndResource:FindChild("RUNE" .. i):FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+		self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetMax(25)
+	end
+	
+	if self.tSettings.smoothBars then
+		Apollo.RegisterEventHandler("NextFrame", "OnSlingerUpdate", self)
+	else
+		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnSlingerUpdate", self)
+	end
+end
+
+function ForgeUI_ResourceBars:OnSlingerUpdate()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	if unitPlayer == nil or not unitPlayer:IsValid() then return end
+	
+	local nResource = unitPlayer:GetResource(4)
+	
+	if unitPlayer:IsInCombat() or GameLib.IsSpellSurgeActive() or nResource < self.playerMaxResource then
+		for i = 1, 4 do
+			if nResource >= (i * 25) then
+				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.slinger.resourceColor1)
+				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetProgress(25)
+			else
+				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.slinger.resourceColor2)
+				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetProgress(25 - ((i * 25) - nResource))
+			end
+		end
+		
+		self.wndResource:Show(true, true)
+	else
+		self.wndResource:Show(false, true)
+	end
+	
+	if GameLib.IsSpellSurgeActive() then
+		self.wndResource:FindChild("SpellSurge"):Show(true, true)
+	else
+		self.wndResource:FindChild("SpellSurge"):Show(false, true)
+	end
+
 	self:UpdateFocus(unitPlayer)
 end
 
