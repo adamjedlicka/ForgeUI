@@ -46,6 +46,7 @@ function ForgeUI_UnitFrames:new(o)
 	}
 	
 	self.playerClass = nil
+	self.tWndPets = {}
 
     return o
 end
@@ -92,6 +93,11 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	self.wndHazardToxic = Apollo.LoadForm(self.xmlDoc, "ForgeUI_HazardToxic", "FixedHudStratumLow", self)
 	
 	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", nil, self)
+	
+	
+	self.tWndPets[0] = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PetFrame", "FixedHudStratumLow", self)
+	self.tWndPets[1] = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PetFrame", "FixedHudStratumLow", self)
+	self.tWndPets[1]:SetAnchorOffsets(-50, 140, 150, 165)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -104,6 +110,10 @@ function ForgeUI_UnitFrames:OnNextFrame()
 	
 	self:UpdatePlayerFrame(unitPlayer)
 	self:UpdateHazards(unitPlayer)
+	
+	if self.playerClass == "engineer" then
+		self:UpdatePetFrames(unitPlayer)
+	end
 end
 
 -- Player Frame
@@ -205,6 +215,29 @@ function ForgeUI_UnitFrames:UpdateFocusFrame(unitSource)
 	self:UpdateHPBar(unit, self.wndFocusFrame)
 	self.wndFocusFrame:SetData(unit)
 	self.wndFocusFrame:Show(true)
+end
+
+-- Pet Frames
+function ForgeUI_UnitFrames:UpdatePetFrames(unitPlayer)
+	tPets = GameLib.GetPlayerPets()
+	
+	for _, petFrame in pairs(self.tWndPets) do
+		petFrame:Show(false, true)
+	end
+	
+	for i, pet in pairs(tPets) do
+		local petFrame = self.tWndPets[i - 1]
+		
+		petFrame:FindChild("Name"):SetText(pet:GetName())
+		self:UpdateHPBar(pet, petFrame)	
+		self:UpdateShieldBar(pet, petFrame)
+		self:UpdateAbsorbBar(pet, petFrame)
+		self:UpdateInterruptArmor(pet, petFrame)
+		
+		petFrame:SetData(pet)
+		petFrame:Show(true, true)
+	end
+	--Print(#tPets)
 end
 
 -- hp bar
@@ -380,6 +413,16 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
 	self.wndFocusFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
 	self.wndFocusFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+	
+	-- pets
+	for _, petFrame in pairs(self.tWndPets) do
+		petFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
+		petFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
+		petFrame:FindChild("Shield_ProgressBar"):SetBarColor("ff" .. self.tSettings.shieldBarColor)
+		petFrame:FindChild("Absorb_ProgressBar"):SetBarColor("ff" .. self.tSettings.absorbBarColor)	
+		petFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+		petFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+	end
 end
 
 -----------------------------------------------------------------------------------------------
