@@ -486,6 +486,13 @@ function ForgeUI.Round(num, idp)
   return math.floor(num * mult + 0.5) / mult
 end
 
+function ForgeUI.InTable(tbl, item)
+    for key, value in pairs(tbl) do
+        if value == item then return key end
+    end
+    return false
+end
+
 function ForgeUI.ConvertAlpha(value)	
 	return string.format("%02X", math.floor(value * 255 + 0.5))
 end

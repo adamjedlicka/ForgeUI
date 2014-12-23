@@ -18,6 +18,15 @@ tClassEnums = {
 	[GameLib.CodeEnumClass.Stalker]      	= "stalker",
 	[GameLib.CodeEnumClass.Spellslinger]	= "spellslinger"
 } 
+
+tEngineerStances = {
+	[0] = "",
+	[1] = Apollo.GetString("EngineerResource_Aggro"),
+	[2] = Apollo.GetString("EngineerResource_Defend"),
+	[3] = Apollo.GetString("EngineerResource_Passive"),
+	[4] = Apollo.GetString("EngineerResource_Assist"),
+	[5] = Apollo.GetString("EngineerResource_Stay"),
+}
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
@@ -94,10 +103,9 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
 	
 	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", nil, self)
 	
-	
 	self.tWndPets[0] = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PetFrame", "FixedHudStratumLow", self)
 	self.tWndPets[1] = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PetFrame", "FixedHudStratumLow", self)
-	self.tWndPets[1]:SetAnchorOffsets(-50, 140, 150, 165)
+	self.tWndPets[1]:SetAnchorOffsets(95, 100, 225, 120)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -111,7 +119,7 @@ function ForgeUI_UnitFrames:OnNextFrame()
 	self:UpdatePlayerFrame(unitPlayer)
 	self:UpdateHazards(unitPlayer)
 	
-	if self.playerClass == "engineer" then
+	if self.playerClass == "engineer" or self.playerClass == "esper" then
 		self:UpdatePetFrames(unitPlayer)
 	end
 end
@@ -221,6 +229,10 @@ end
 function ForgeUI_UnitFrames:UpdatePetFrames(unitPlayer)
 	tPets = GameLib.GetPlayerPets()
 	
+	if #tPets == 0 then
+		self.wndPetControl:Show(false, true)
+	end
+	
 	for _, petFrame in pairs(self.tWndPets) do
 		petFrame:Show(false, true)
 	end
@@ -231,8 +243,6 @@ function ForgeUI_UnitFrames:UpdatePetFrames(unitPlayer)
 		petFrame:FindChild("Name"):SetText(pet:GetName())
 		self:UpdateHPBar(pet, petFrame)	
 		self:UpdateShieldBar(pet, petFrame)
-		self:UpdateAbsorbBar(pet, petFrame)
-		self:UpdateInterruptArmor(pet, petFrame)
 		
 		petFrame:SetData(pet)
 		petFrame:Show(true, true)
@@ -356,6 +366,15 @@ function ForgeUI_UnitFrames:OnCharacterCreated()
 	local eClassId = unitPlayer:GetClassId()
 	if eClassId == GameLib.CodeEnumClass.Engineer then
 		self.playerClass = "engineer"
+		
+		self.wndPetControl = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PetControl", "FixedHudStratumLow", self)
+		self.wndPetControl:FindChild("Text"):SetText(tEngineerStances[Pet_GetStance(0)])
+		self.wndPetControl:Show(true, true)
+		
+		ForgeUI.RegisterWindowPosition(self, self.wndPetControl, "ForgeUI_UnitFrames_PetControl", self.wndMovables:FindChild("Movable_PetControl"))
+		
+		Apollo.RegisterEventHandler("PetStanceChanged", 			"OnPetStanceChanged", self)
+		Apollo.RegisterEventHandler("PetSpawned",					"OnPetSpawned", self)
 	elseif eClassId == GameLib.CodeEnumClass.Esper then
 		self.playerClass = "esper"
 	elseif eClassId == GameLib.CodeEnumClass.Medic then
@@ -387,6 +406,10 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndToTFrame, "ForgeUI_UnitFrames_ToTFrame", self.wndMovables:FindChild("Movable_ToTFrame"))
 	
+	ForgeUI.RegisterWindowPosition(self, self.wndHazardBreath, "ForgeUI_UnitFrames_Hazard_Breath", self.wndMovables:FindChild("Movable_Hazard_Breath"))
+	ForgeUI.RegisterWindowPosition(self, self.wndHazardHeat, "ForgeUI_UnitFrames_Hazard_Heat", self.wndMovables:FindChild("Movable_Hazard_Heat"))
+	ForgeUI.RegisterWindowPosition(self, self.wndHazardToxic, "ForgeUI_UnitFrames_Hazard_Toxic", self.wndMovables:FindChild("Movable_Hazard_Toxic"))
+	
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerBuffFrame, "ForgeUI_UnitFrames_PlayerBuffs", self.wndMovables:FindChild("Movable_PlayerBuffs"))
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerDebuffFrame, "ForgeUI_UnitFrames_PlayerDebuffs", self.wndMovables:FindChild("Movable_PlayerDebuffs"))
 	ForgeUI.RegisterWindowPosition(self, self.wndTargetBuffFrame, "ForgeUI_UnitFrames_TargetBuffs", self.wndMovables:FindChild("Movable_TargetBuffs"))
@@ -415,13 +438,11 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	self.wndFocusFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
 	
 	-- pets
-	for _, petFrame in pairs(self.tWndPets) do
+	for i, petFrame in pairs(self.tWndPets) do
 		petFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
 		petFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
-		petFrame:FindChild("Shield_ProgressBar"):SetBarColor("ff" .. self.tSettings.shieldBarColor)
-		petFrame:FindChild("Absorb_ProgressBar"):SetBarColor("ff" .. self.tSettings.absorbBarColor)	
+		petFrame:FindChild("Shield_TextValue"):SetTextColor("ff" .. self.tSettings.shieldBarColor)
 		petFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
-		petFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
 	end
 end
 
@@ -494,7 +515,49 @@ function ForgeUI_UnitFrames:OnMovableMove( wndHandler, wndControl, nOldLeft, nOl
 	self.wndPlayerDebuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerDebuffs"):GetAnchorOffsets())
 	self.wndTargetBuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetBuffs"):GetAnchorOffsets())
 	self.wndTargetDebuffFrame:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetDebuffs"):GetAnchorOffsets())
+	
+	self.wndHazardBreath:SetAnchorOffsets(self.wndMovables:FindChild("Movable_Hazard_Breath"):GetAnchorOffsets())
+	self.wndHazardToxic:SetAnchorOffsets(self.wndMovables:FindChild("Movable_Hazard_Toxic"):GetAnchorOffsets())
+	self.wndHazardHeat:SetAnchorOffsets(self.wndMovables:FindChild("Movable_Hazard_Heat"):GetAnchorOffsets())
+	
+	self.wndPetControl:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PetControl"):GetAnchorOffsets())
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_PetControl Functions
+---------------------------------------------------------------------------------------------------
+function ForgeUI_UnitFrames:PetBar_OnMouseEnter( wndHandler, wndControl, x, y )
+	local text = wndControl:GetParent():GetParent():GetParent():FindChild("Text")
+	text:SetTextColor("FFFFFFFF")
+	text:SetText(wndHandler:GetName())
+end
+
+function ForgeUI_UnitFrames:PetBar_OnMouseExit( wndHandler, wndControl, x, y )
+	local text = wndControl:GetParent():GetParent():GetParent():FindChild("Text")
+	text:SetText(tEngineerStances[Pet_GetStance(0)])
+end
+
+function ForgeUI_UnitFrames:PetBar_OnButtonSignal( wndHandler, wndControl, eMouseButton )
+	if wndControl:GetName() == "Assist" then
+		Pet_SetStance(0, 4)
+	elseif wndControl:GetName() == "Passive" then
+		Pet_SetStance(0, 3)
+	elseif wndControl:GetName() == "Defend" then
+		Pet_SetStance(0, 2)
+	elseif wndControl:GetName() == "Aggro" then
+		Pet_SetStance(0, 1)
+	end
+end
+
+function ForgeUI_UnitFrames:OnPetStanceChanged(petId)
+	self.wndPetControl:FindChild("Text"):SetText(tEngineerStances[Pet_GetStance(0)])
+end
+
+function ForgeUI_UnitFrames:OnPetSpawned(petId)
+	self.wndPetControl:FindChild("Text"):SetText(tEngineerStances[Pet_GetStance(0)])
+	self.wndPetControl:Show(true, true)
 end
 
 local ForgeUI_UnitFramesInst = ForgeUI_UnitFrames:new()
 ForgeUI_UnitFramesInst:Init()
+
