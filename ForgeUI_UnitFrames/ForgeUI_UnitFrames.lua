@@ -520,7 +520,9 @@ function ForgeUI_UnitFrames:OnMovableMove( wndHandler, wndControl, nOldLeft, nOl
 	self.wndHazardToxic:SetAnchorOffsets(self.wndMovables:FindChild("Movable_Hazard_Toxic"):GetAnchorOffsets())
 	self.wndHazardHeat:SetAnchorOffsets(self.wndMovables:FindChild("Movable_Hazard_Heat"):GetAnchorOffsets())
 	
-	self.wndPetControl:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PetControl"):GetAnchorOffsets())
+	if self.wndPetControl ~= nil then
+		self.wndPetControl:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PetControl"):GetAnchorOffsets())
+	end
 end
 
 ---------------------------------------------------------------------------------------------------

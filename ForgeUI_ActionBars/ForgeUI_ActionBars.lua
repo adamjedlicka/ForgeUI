@@ -30,7 +30,8 @@ function ForgeUI_ActionBars:new(o)
 	
 	-- optional
 	self.tSettings = {
-
+		nSelectedMount = 0,
+		nSelectedPotion = 0
 	}
 
     return o
@@ -55,9 +56,12 @@ function ForgeUI_ActionBars:OnLoad()
 end
 
 function ForgeUI_ActionBars:ForgeAPI_AfterRegistration()
-	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", "InWorldHudStratum", self)
-	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", "InWorldHudStratum", self)
-	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", "InWorldHudStratum", self)
+	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", nil, self)
+	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", nil, self)
+	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", nil, self)
+	self.wndPotionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBar", nil, self)
+	self.wndMountBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MountBar", nil, self)
+	self.wndRecallBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_RecallBar", nil, self)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -77,6 +81,7 @@ function ForgeUI_ActionBars:OnDocLoaded()
 ---------------------------------------------------------------------------------------------------
 end
 function ForgeUI_ActionBars:OnStancePopup( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if eMouseButton ~= 1 then return end
 	local wndPopup = wndHandler:FindChild("Popup")
 	local wndList = wndPopup:FindChild("List")
 
@@ -102,19 +107,199 @@ function ForgeUI_ActionBars:OnStancePopup( wndHandler, wndControl, eMouseButton,
 	wndPopup:SetAnchorOffsets(nLeft, -(nCountSkippingTwo * 45), nRight, nBottom)
 	
 	wndList:ArrangeChildrenVert(0)
-	
-	if eMouseButton == 1 then
-		wndPopup:Show(not wndPopup:IsShown())
-	end
+	wndPopup:Show(not wndPopup:IsShown())
 end
-
----------------------------------------------------------------------------------------------------
--- ForgeUI_StanceBtn Functions
----------------------------------------------------------------------------------------------------
 
 function ForgeUI_ActionBars:OnStanceBtn( wndHandler, wndControl, eMouseButton )
 	self.wndStanceBar:FindChild("Popup"):Show(false)
 	GameLib.SetCurrentClassInnateAbilityIndex(wndHandler:GetData())
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_PotionBar Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_ActionBars:OnPotionPopup( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if eMouseButton ~= 1 then return end
+	
+	local wndPotionPopout = self.wndPotionBar:FindChild("Popup")
+	local wndPotionList = wndPotionPopout:FindChild("List")
+	
+	self:RedrawPotions()
+	
+	wndPotionPopout:Show(not wndPotionPopout:IsShown())
+end
+
+function ForgeUI_ActionBars:RedrawPotions()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	
+	local wndPotionPopout = self.wndPotionBar:FindChild("Popup")
+	local wndPotionList = wndPotionPopout:FindChild("List")
+	wndPotionList:DestroyChildren()
+	
+	local tItemList = unitPlayer and unitPlayer:IsValid() and unitPlayer:GetInventoryItems() or {}
+	local tSelectedPotion = nil;
+	local tFirstPotion = nil
+	local tPotions = { }
+	
+	for idx, tItemData in pairs(tItemList) do
+		if tItemData and tItemData.itemInBag and tItemData.itemInBag:GetItemCategory() == 48 then--and tItemData.itemInBag:GetConsumable() == "Consumable" then
+			local itemPotion = tItemData.itemInBag
+
+			if tFirstPotion == nil then
+				tFirstPotion = itemPotion
+			end
+
+			if itemPotion:GetItemId() == self.tSettings.nSelectedPotion then
+				tSelectedPotion = itemPotion
+			end
+			
+			local idItem = itemPotion:GetItemId()
+
+			if tPotions[idItem] == nil then
+				tPotions[idItem] = 
+				{
+					itemObject = itemPotion,
+					nCount = itemPotion:GetStackCount(),
+				}
+			else
+				tPotions[idItem].nCount = tPotions[idItem].nCount + itemPotion:GetStackCount()
+			end
+		end
+	end
+	
+	local count = 0
+	for idx, tData  in pairs(tPotions) do
+		count = count + 1
+	
+		local wndCurr = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBtn", wndPotionList, self)
+		wndCurr:FindChild("Icon"):SetSprite(tData.itemObject:GetIcon())
+		--if (tData.nCount > 1) then wndCurr:FindChild("Count"):SetText(tData.nCount) end
+		wndCurr:FindChild("Button"):SetData(tData.itemObject)
+
+		wndCurr:SetTooltipDoc(nil)
+		Tooltip.GetItemTooltipForm(self, wndCurr, tData.itemObject, {})
+	end
+
+	if tSelectedPotion == nil and tFirstPotion ~= nil then
+		tSelectedPotion = tFirstPotion
+	end
+
+	if tSelectedPotion ~= nil then
+		GameLib.SetShortcutPotion(tSelectedPotion:GetItemId())
+	end
+
+	local nLeft, nTop, nRight, nBottom = wndPotionPopout:GetAnchorOffsets()
+	wndPotionPopout:SetAnchorOffsets(nLeft, -(count * 45), nRight, nBottom)
+	
+	wndPotionList:ArrangeChildrenVert()
+end
+
+function ForgeUI_ActionBars:OnPotionBtn( wndHandler, wndControl, eMouseButton )
+	self.tSettings.nSelectedPotion = wndControl:GetData():GetItemId()
+
+	self.wndPotionBar:FindChild("Popup"):Show(false)
+	self:RedrawPotions()
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_MountBar Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_ActionBars:OnMountPopup( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if eMouseButton ~= 1 then return end
+	
+	local wndMountPopout = self.wndMountBar:FindChild("Popup")
+	local wndMountList = wndMountPopout:FindChild("List")
+	
+	self:RedrawMounts()
+	
+	wndMountPopout:Show(not wndMountPopout:IsShown())
+end
+
+function ForgeUI_ActionBars:RedrawMounts()
+	local wndMountPopout = self.wndMountBar:FindChild("Popup")
+	local wndMountList = wndMountPopout:FindChild("List")
+	wndMountList:DestroyChildren()
+
+	local tMountList = AbilityBook.GetAbilitiesList(Spell.CodeEnumSpellTag.Mount) or {}
+	local tSelectedSpellObj = nil
+
+	local count = 0
+	for idx, tMountData  in pairs(tMountList) do
+		count = count + 1
+		
+		local tSpellObject = tMountData.tTiers[1].splObject
+
+		if tSpellObject:GetId() == self.tSettings.nSelectedMount then
+			tSelectedSpellObj = tSpellObject
+		end
+
+		local wndCurr = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MountBtn", wndMountList, self)
+		wndCurr:FindChild("Icon"):SetSprite(tSpellObject:GetIcon())
+		wndCurr:FindChild("Button"):SetData(tSpellObject)
+
+		if Tooltip and Tooltip.GetSpellTooltipForm then
+			wndCurr:SetTooltipDoc(nil)
+			Tooltip.GetSpellTooltipForm(self, wndCurr, tSpellObject, {})
+		end
+	end
+
+	if tSelectedSpellObj == nil and #tMountList > 0 then
+		tSelectedSpellObj = tMountList[1].tTiers[1].splObject
+	end
+
+	if tSelectedSpellObj ~= nil then
+		GameLib.SetShortcutMount(tSelectedSpellObj:GetId())
+	end
+
+	local nLeft, nTop, nRight, nBottom = wndMountPopout:GetAnchorOffsets()
+	wndMountPopout:SetAnchorOffsets(nLeft, -(count * 45), nRight, nBottom)
+	
+	wndMountList:ArrangeChildrenVert()
+end
+
+
+function ForgeUI_ActionBars:OnMountBtn( wndHandler, wndControl, eMouseButton )
+	self.tSettings.nSelectedMount = wndControl:GetData():GetId()
+
+	self.wndMountBar:FindChild("Popup"):Show(false)
+	self:RedrawMounts()
+end
+
+function ForgeUI_ActionBars:OnGenerateTooltip(wndControl, wndHandler, eType, arg1, arg2)
+	local xml = nil
+	if eType == Tooltip.TooltipGenerateType_ItemInstance then -- Doesn't need to compare to item equipped
+		Tooltip.GetItemTooltipForm(self, wndControl, arg1, {})
+	elseif eType == Tooltip.TooltipGenerateType_ItemData then -- Doesn't need to compare to item equipped
+		Tooltip.GetItemTooltipForm(self, wndControl, arg1, {})
+	elseif eType == Tooltip.TooltipGenerateType_GameCommand then
+		xml = XmlDoc.new()
+		xml:AddLine(arg2)
+		wndControl:SetTooltipDoc(xml)
+	elseif eType == Tooltip.TooltipGenerateType_Macro then
+		xml = XmlDoc.new()
+		xml:AddLine(arg1)
+		wndControl:SetTooltipDoc(xml)
+	elseif eType == Tooltip.TooltipGenerateType_Spell then
+		if Tooltip ~= nil and Tooltip.GetSpellTooltipForm ~= nil then
+			Tooltip.GetSpellTooltipForm(self, wndControl, arg1)
+		end
+	elseif eType == Tooltip.TooltipGenerateType_PetCommand then
+		xml = XmlDoc.new()
+		xml:AddLine(arg2)
+		wndControl:SetTooltipDoc(xml)
+	end
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_RecallBar Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_ActionBars:OnRecallPopup( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+end
+
+function ForgeUI_ActionBars:OnRecallBtn( wndHandler, wndControl, eMouseButton )
 end
 
 -----------------------------------------------------------------------------------------------
