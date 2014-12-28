@@ -119,7 +119,7 @@ function ForgeUI_UnitFrames:OnNextFrame()
 	self:UpdatePlayerFrame(unitPlayer)
 	self:UpdateHazards(unitPlayer)
 	
-	if self.playerClass == "engineer" or self.playerClass == "esper" then
+	if self.playerClass == "engineer" then
 		self:UpdatePetFrames(unitPlayer)
 	end
 end
