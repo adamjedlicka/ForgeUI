@@ -464,7 +464,11 @@ end
 ---------------------------------------------------------------------------------------------------
 
 function ForgeUI_ResourceBars:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
-	self.wndResource:SetAnchorOffsets(wndControl:GetAnchorOffsets())
+	if wndControl:GetName() == "Movable_Resource" then
+		self.wndResource:SetAnchorOffsets(wndControl:GetAnchorOffsets())
+	elseif wndControl:GetName() == "Movable_Focus" then
+		self.wndFocus:SetAnchorOffsets(wndControl:GetAnchorOffsets())
+	end
 end
 
 -----------------------------------------------------------------------------------------------
