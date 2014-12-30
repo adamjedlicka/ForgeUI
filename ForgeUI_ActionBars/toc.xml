@@ -3,4 +3,8 @@
     <Script Name="ForgeUI_ActionBars.lua"/>
     <Form Name="ForgeUI_ActionBars.xml"/>
     <ReplaceAddon Name="ActionBarFrame"/>
+	<ReplaceAddon Name="ActionBarShortcut"/>
+	<ReplaceAddon Name="Medic"/>
+	<ReplaceAddon Name="PathFrame"/>
+	<ReplaceAddon Name="RecallFrame"/>
 </Addon>
