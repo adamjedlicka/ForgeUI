@@ -62,13 +62,15 @@ function ForgeUI_ActionBars:OnLoad()
 end
 
 function ForgeUI_ActionBars:ForgeAPI_AfterRegistration()
-	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", nil, self)
-	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", nil, self)
-	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", nil, self)
-	self.wndPotionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBar", nil, self)
-	self.wndMountBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MountBar", nil, self)
-	self.wndRecallBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_RecallBar", nil, self)
-	self.wndPathBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PathBar", nil, self)
+	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", "FixedHudStratumLow", self)
+	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", "FixedHudStratumLow", self)
+	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", "FixedHudStratumLow", self)
+	self.wndPotionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBar", "FixedHudStratumLow", self)
+	self.wndMountBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MountBar", "FixedHudStratumLow", self)
+	self.wndRecallBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_RecallBar", "FixedHudStratumLow", self)
+	self.wndPathBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PathBar", "FixedHudStratumLow", self)
+	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
 	
 	Apollo.RegisterEventHandler("AbilityBookChange", "RedrawActionBars", self)
 end
@@ -508,6 +510,28 @@ end
 function ForgeUI_ActionBars:ForgeAPI_AfterRestore()
 	GameLib.SetDefaultRecallCommand(GameLib.GetDefaultRecallCommand())
 	self.wndRecallBar:FindChild("ActionBarButton"):SetContentId(GameLib.GetDefaultRecallCommand())
+	
+	ForgeUI.RegisterWindowPosition(self, self.wndActionBar, "ForgeUI_ActionBar", self.wndMovables:FindChild("Movable_ActionBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndStanceBar, "ForgeUI_StanceBar", self.wndMovables:FindChild("Movable_StanceBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndPathBar, "ForgeUI_PathBar", self.wndMovables:FindChild("Movable_PathBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndRecallBar, "ForgeUI_RecallBar", self.wndMovables:FindChild("Movable_RecallBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndGadgetBar, "ForgeUI_GadgetBar", self.wndMovables:FindChild("Movable_GadgetBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndMountBar, "ForgeUI_MountBar", self.wndMovables:FindChild("Movable_MountBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndPotionBar, "ForgeUI_PotionBar", self.wndMovables:FindChild("Movable_PotionBar"))
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_Movables Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_ActionBars:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	self.wndActionBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_ActionBar"):GetAnchorOffsets())
+	self.wndStanceBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_StanceBar"):GetAnchorOffsets())
+	self.wndPathBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PathBar"):GetAnchorOffsets())
+	self.wndMountBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_MountBar"):GetAnchorOffsets())
+	self.wndRecallBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_RecallBar"):GetAnchorOffsets())
+	self.wndGadgetBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_GadgetBar"):GetAnchorOffsets())
+	self.wndPotionBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PotionBar"):GetAnchorOffsets())
 end
 
 -----------------------------------------------------------------------------------------------
