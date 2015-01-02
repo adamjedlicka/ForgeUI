@@ -33,7 +33,12 @@ function ForgeUI_InterfaceMenuList:new(o)
 end
 
 function ForgeUI_InterfaceMenuList:Init()
-    Apollo.RegisterAddon(self)
+	local bHasConfigureFunction = false
+	local strConfigureButtonText = ""
+	local tDependencies = {
+		"ForgeUI"
+	}
+    Apollo.RegisterAddon(self, bHasConfigureFunction, strConfigureButtonText, tDependencies)
 end
 
 
