@@ -78,7 +78,8 @@ function ForgeUI_InfoBar:ForgeAPI_AfterRegistration()
 end
 
 function ForgeUI_InfoBar:OnNextFrame()
-	local stats = self.unitPlayer:GetBasicStats()
+	local stats = GameLib.GetPlayerUnit():GetBasicStats()
+	if stats == nil then return end
 	local currentXP = GetXp()
 	local neededXP = GetXpToNextLevel()
 	local elderXP = GetPeriodicElderPoints()

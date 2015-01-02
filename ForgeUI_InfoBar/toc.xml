@@ -2,4 +2,5 @@
 <Addon Author="WintyBadass" APIVersion="9" Name="ForgeUI_InfoBar" Description="">
     <Script Name="ForgeUI_InfoBar.lua"/>
     <Form Name="ForgeUI_InfoBar.xml"/>
+	<ReplaceAddon Name="XPBar"/>
 </Addon>
