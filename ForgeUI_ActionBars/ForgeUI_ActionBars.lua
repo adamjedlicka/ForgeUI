@@ -62,24 +62,18 @@ function ForgeUI_ActionBars:OnLoad()
 end
 
 function ForgeUI_ActionBars:ForgeAPI_AfterRegistration()
-	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", "FixedHudStratumLow", self)
-	self.wndSideBar1 = Apollo.LoadForm(self.xmlDoc, "ForgeUI_SideBar1", "FixedHudStratumLow", self)
-	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", "FixedHudStratumLow", self)
-	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", "FixedHudStratumLow", self)
-	self.wndPotionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBar", "FixedHudStratumLow", self)
-	self.wndMountBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MountBar", "FixedHudStratumLow", self)
-	self.wndRecallBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_RecallBar", "FixedHudStratumLow", self)
-	self.wndPathBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PathBar", "FixedHudStratumLow", self)
+	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", nil, self)
+	self.wndSideBar1 = Apollo.LoadForm(self.xmlDoc, "ForgeUI_SideBar1", nil, self)
+	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", nil, self)
+	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", nil, self)
+	self.wndPotionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBar", nil, self)
+	self.wndMountBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MountBar", nil, self)
+	self.wndRecallBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_RecallBar", nil, self)
+	self.wndPathBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PathBar", nil, self)
 	
 	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
 	
 	Apollo.RegisterEventHandler("AbilityBookChange", "RedrawActionBars", self)
-	
-	if GameLib.GetPlayerUnit() then
-		self:OnCharacterCreated()
-	else
-		Apollo.RegisterEventHandler("CharacterCreated", 	"OnCharacterCreated", self)
-	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -95,10 +89,6 @@ function ForgeUI_ActionBars:OnDocLoaded()
 	ForgeUI.RegisterAddon(self)
 end
 
-function ForgeUI_ActionBars:OnCharacterCreated()
-	self:RedrawActionBars()
-end
-
 function ForgeUI_ActionBars:RedrawActionBars()
 	self:RedrawActionBar()
 	self:RedrawRecalls()
@@ -109,17 +99,22 @@ function ForgeUI_ActionBars:RedrawActionBars()
 end
 
 function ForgeUI_ActionBars:RedrawActionBar()
+	self.wndActionBar:DestroyChildren()
+	self.wndSideBar1:DestroyChildren()
+
 	for i = 0, 7 do
 		local wndActionBtn = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBtn", self.wndActionBar, self)
 		wndActionBtn:FindChild("ActionBarButton"):SetContentId(i)
 		wndActionBtn:SetAnchorPoints(0.125 * i, 0, 0.125 * (i + 1), 1)
+		--local nLeft, nTop, nRight, nBottom = wndActionBtn:GetAnchorOffsets()
+		--wndActionBtn:SetAnchorOffsets(nLeft - i, nTop, nRight - i, nBottom)
 	end
 	
-	for i = 12, 14 do
+	for i = 0, 12 do
 		local wndActionBtn = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBtn1", self.wndSideBar1, self)
-		wndActionBtn:FindChild("ActionBarButton"):SetContentId(i)
+		wndActionBtn:FindChild("ActionBarButton"):SetContentId(i + 12)
 		--wndActionBtn:FindChild("ActionBarButton"):SetType("ABar")
-		wndActionBtn:SetAnchorPoints(0.333 * (i - 12), 0, 0.333 * (i - 11), 1)
+		wndActionBtn:SetAnchorPoints(0, (1 / 12) * i, 1, (1 / 12) * (i + 1))
 	end
 end
 
@@ -138,6 +133,7 @@ end
 function ForgeUI_ActionBars:RedrawStances()
 	local wndPopup = self.wndStanceBar:FindChild("Popup")
 	local wndList = self.wndStanceBar:FindChild("List")
+	local nSize = wndList:GetWidth()
 
 	wndList:DestroyChildren()
 	
@@ -150,6 +146,8 @@ function ForgeUI_ActionBars:RedrawStances()
 			wndCurr:SetData({sType = "stance"})
 			wndCurr:FindChild("Icon"):SetSprite(spellObject:GetIcon())
 			wndCurr:FindChild("Button"):SetData(nCount)
+			
+			wndCurr:SetAnchorOffsets(0, 0, nSize, nSize)
 
 			if Tooltip and Tooltip.GetSpellTooltipForm then
 				wndCurr:SetTooltipDoc(nil)
@@ -159,7 +157,7 @@ function ForgeUI_ActionBars:RedrawStances()
 	end
 	
 	local nLeft, nTop, nRight, nBottom = wndPopup:GetAnchorOffsets()
-	wndPopup:SetAnchorOffsets(nLeft, -(nCount * 45), nRight, nBottom)
+	wndPopup:SetAnchorOffsets(nLeft, -(nCount * nSize), nRight, nBottom)
 	
 	wndList:ArrangeChildrenVert()
 end
@@ -183,6 +181,8 @@ function ForgeUI_ActionBars:RedrawPotions()
 	
 	local wndPopup = self.wndPotionBar:FindChild("Popup")
 	local wndList = self.wndPotionBar:FindChild("List")
+	
+	local nSize = wndList:GetWidth()
 	
 	wndList:DestroyChildren()
 	
@@ -208,6 +208,8 @@ function ForgeUI_ActionBars:RedrawPotions()
 		wndCurr:FindChild("Icon"):SetSprite(tData.itemObject:GetIcon())
 		wndCurr:FindChild("Button"):SetData(tData.itemObject)
 
+		wndCurr:SetAnchorOffsets(0, 0, nSize, nSize)
+		
 		wndCurr:SetTooltipDoc(nil)
 		Tooltip.GetItemTooltipForm(self, wndCurr, tData.itemObject, {})
 	end
@@ -215,7 +217,7 @@ function ForgeUI_ActionBars:RedrawPotions()
 	GameLib.SetShortcutPotion(self.tSettings.nSelectedPotion)
 
 	local nLeft, nTop, nRight, nBottom = wndPopup:GetAnchorOffsets()
-	wndPopup:SetAnchorOffsets(nLeft, -(nCount * 45), nRight, nBottom)
+	wndPopup:SetAnchorOffsets(nLeft, -(nCount * nSize), nRight, nBottom)
 	
 	wndList:ArrangeChildrenVert()
 	
@@ -239,6 +241,8 @@ function ForgeUI_ActionBars:RedrawMounts()
 	local wndPopup = self.wndMountBar:FindChild("Popup")
 	local wndList = self.wndMountBar:FindChild("List")
 	
+	local nSize = wndList:GetWidth()
+	
 	wndList:DestroyChildren()
 
 	local tMountList = AbilityBook.GetAbilitiesList(Spell.CodeEnumSpellTag.Mount) or {}
@@ -259,6 +263,8 @@ function ForgeUI_ActionBars:RedrawMounts()
 		wndCurr:FindChild("Icon"):SetSprite(tSpellObject:GetIcon())
 		wndCurr:FindChild("Button"):SetData(tSpellObject)
 
+		wndCurr:SetAnchorOffsets(0, 0, nSize, nSize)
+		
 		if Tooltip and Tooltip.GetSpellTooltipForm then
 			wndCurr:SetTooltipDoc(nil)
 			Tooltip.GetSpellTooltipForm(self, wndCurr, tSpellObject, {})
@@ -274,7 +280,7 @@ function ForgeUI_ActionBars:RedrawMounts()
 	end
 
 	local nLeft, nTop, nRight, nBottom = wndPopup:GetAnchorOffsets()
-	wndPopup:SetAnchorOffsets(nLeft, -(nCount * 45), nRight, nBottom)
+	wndPopup:SetAnchorOffsets(nLeft, -(nCount * nSize), nRight, nBottom)
 	
 	wndList:ArrangeChildrenVert()
 	
@@ -307,6 +313,8 @@ function ForgeUI_ActionBars:RedrawRecalls()
 	local wndPopup = self.wndRecallBar:FindChild("Popup")
 	local wndList = self.wndRecallBar:FindChild("List")
 
+	local nSize = wndList:GetWidth()
+	
 	wndList:DestroyChildren()
 	
 	local nCount = 0
@@ -321,6 +329,8 @@ function ForgeUI_ActionBars:RedrawRecalls()
 		wndBind:FindChild("RecallActionBtn"):SetContentId(GameLib.CodeEnumRecallCommand.BindPoint)
 		wndBind:FindChild("RecallActionBtn"):SetData(GameLib.CodeEnumRecallCommand.BindPoint)
 		
+		wndBind:SetAnchorOffsets(0, 0, nSize, nSize)
+		
 		bHasBinds = true
 		nCount = nCount + 1
 	end
@@ -331,6 +341,8 @@ function ForgeUI_ActionBars:RedrawRecalls()
 		wndHouse:FindChild("RecallActionBtn"):SetContentId(GameLib.CodeEnumRecallCommand.House)
 		wndHouse:FindChild("RecallActionBtn"):SetData(GameLib.CodeEnumRecallCommand.House)
 		
+		wndHouse:SetAnchorOffsets(0, 0, nSize, nSize)
+
 		bHasBinds = true
 		nCount = nCount + 1		
 	end
@@ -349,6 +361,8 @@ function ForgeUI_ActionBars:RedrawRecalls()
 		wndWarplot:FindChild("RecallActionBtn"):SetContentId(GameLib.CodeEnumRecallCommand.Warplot)
 		wndWarplot:FindChild("RecallActionBtn"):SetData(GameLib.CodeEnumRecallCommand.Warplot)
 		
+		wndWarplot:SetAnchorOffsets(0, 0, nSize, nSize)
+
 		bHasBinds = true
 		nCount = nCount + 1	
 	end
@@ -371,6 +385,8 @@ function ForgeUI_ActionBars:RedrawRecalls()
 		wndWarplot:FindChild("RecallActionBtn"):SetContentId(GameLib.CodeEnumRecallCommand.Illium)
 		wndWarplot:FindChild("RecallActionBtn"):SetData(GameLib.CodeEnumRecallCommand.Illium)
 		
+		wndWarplot:SetAnchorOffsets(0, 0, nSize, nSize)
+
 		bHasBinds = true
 		nCount = nCount + 1
 	end
@@ -379,14 +395,16 @@ function ForgeUI_ActionBars:RedrawRecalls()
 		-- load capital
 		local wndWarplot = Apollo.LoadForm(self.xmlDoc, "ForgeUI_SpellActionBtn", wndList, self)
 		wndWarplot:FindChild("RecallActionBtn"):SetContentId(GameLib.CodeEnumRecallCommand.Thayd)
-		wndWarplot:FindChild("RecallActionBtn"):SetData(GameLib.CodeEnumRecallCommand.Thayd)		
-		
+		wndWarplot:FindChild("RecallActionBtn"):SetData(GameLib.CodeEnumRecallCommand.Thayd)	
+			
+		wndWarplot:SetAnchorOffsets(0, 0, nSize, nSize)
+
 		bHasBinds = true
 		nCount = nCount + 1
 	end
 	
 	local nLeft, nTop, nRight, nBottom = wndPopup:GetAnchorOffsets()
-	wndPopup:SetAnchorOffsets(nLeft, -(nCount * 45), nRight, nBottom)
+	wndPopup:SetAnchorOffsets(nLeft, -(nCount * nSize), nRight, nBottom)
 	
 	wndList:ArrangeChildrenVert()
 	
@@ -418,6 +436,8 @@ function ForgeUI_ActionBars:RedrawPath()
 	local wndPopup = self.wndPathBar:FindChild("Popup")
 	local wndList = self.wndPathBar:FindChild("List")
 	
+	local nSize = wndList:GetWidth()
+	
 	wndList:DestroyChildren()
 	
 	local nCount = 0
@@ -431,6 +451,8 @@ function ForgeUI_ActionBars:RedrawPath()
 			wndCurr:FindChild("Icon"):SetSprite(spellObject:GetIcon())
 			wndCurr:FindChild("Button"):SetData(tAbility.nId)
 			
+			wndCurr:SetAnchorOffsets(0, 0, nSize, nSize)
+			
 			if Tooltip and Tooltip.GetSpellTooltipForm then
 				wndCurr:SetTooltipDoc(nil)
 				Tooltip.GetSpellTooltipForm(self, wndCurr, spellObject)
@@ -441,7 +463,7 @@ function ForgeUI_ActionBars:RedrawPath()
 	self.wndPathBar:Show(nCount > 0)
 	
 	local nLeft, nTop, nRight, nBottom = wndPopup:GetAnchorOffsets()
-	wndPopup:SetAnchorOffsets(nLeft, -(nCount * 45), nRight, nBottom)
+	wndPopup:SetAnchorOffsets(nLeft, -(nCount * nSize), nRight, nBottom)
 	
 	wndList:ArrangeChildrenVert(0)
 end
@@ -507,6 +529,8 @@ function ForgeUI_ActionBars:ForgeAPI_AfterRestore()
 	ForgeUI.RegisterWindowPosition(self, self.wndGadgetBar, "ForgeUI_GadgetBar", self.wndMovables:FindChild("Movable_GadgetBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndMountBar, "ForgeUI_MountBar", self.wndMovables:FindChild("Movable_MountBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndPotionBar, "ForgeUI_PotionBar", self.wndMovables:FindChild("Movable_PotionBar"))
+	
+	self:RedrawActionBars()
 end
 
 ---------------------------------------------------------------------------------------------------
