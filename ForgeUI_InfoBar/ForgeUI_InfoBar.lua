@@ -73,8 +73,13 @@ function ForgeUI_InfoBar:ForgeAPI_AfterRegistration()
 	self.unitPlayer = GameLib.GetPlayerUnit()
 
 	self.wndInfoBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_InfoBar", "FixedHudStratumLow", self)
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
 	
 	Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNextFrame", self)
+end
+
+function ForgeUI_InfoBar:ForgeAPI_AfterRestore()
+	ForgeUI.RegisterWindowPosition(self, self.wndInfoBar, "ForgeUI_InfoBar", self.wndMovables:FindChild("Movable_InfoBar"))
 end
 
 function ForgeUI_InfoBar:OnNextFrame()
@@ -90,6 +95,14 @@ function ForgeUI_InfoBar:OnNextFrame()
 	self.wndInfoBar:FindChild("Level"):SetText(xpPercent .. "%")
 	self.wndInfoBar:FindChild("FPS"):SetText(framesPerSecond .. "fps")
 	self.wndInfoBar:FindChild("MS"):SetText(latency .. "ms")
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_Movables Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_InfoBar:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	self.wndInfoBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_InfoBar"):GetAnchorOffsets())
 end
 
 -----------------------------------------------------------------------------------------------

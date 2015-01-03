@@ -111,6 +111,8 @@ function ForgeUI_MiniMap:ForgeAPI_AfterRegistration()
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "ForgeUI_MiniMap", "FixedHudStratumLow", self)
 	self.wndMiniMap = self.wndMain:FindChild("MiniMapWindow")
 	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
+	
 	self:HandleNewUnits()
 end
 
@@ -258,6 +260,8 @@ end
 -- restore / save
 
 function ForgeUI_MiniMap:ForgeAPI_AfterRestore()
+	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_MiniMap", self.wndMovables:FindChild("Movable_MiniMap"))
+
 	self.wndMiniMap:SetZoomLevel(self.tSettings.nZoomLevel)
 	
 	-- build minimap window
@@ -268,6 +272,14 @@ end
 
 function ForgeUI_MiniMap:ForgeAPI_BeforeSave()
 	self.tSettings.nZoomLevel = self.wndMiniMap:GetZoomLevel()
+end
+
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_Movables Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_MiniMap:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	self.wndMain:SetAnchorOffsets(self.wndMovables:FindChild("Movable_MiniMap"):GetAnchorOffsets())
 end
 
 -----------------------------------------------------------------------------------------------

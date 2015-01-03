@@ -523,6 +523,7 @@ function ForgeUI_ActionBars:ForgeAPI_AfterRestore()
 	self.wndRecallBar:FindChild("ActionBarButton"):SetContentId(GameLib.GetDefaultRecallCommand())
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndActionBar, "ForgeUI_ActionBar", self.wndMovables:FindChild("Movable_ActionBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndSideBar1, "ForgeUI_SideBar1", self.wndMovables:FindChild("Movable_SideBar1"))
 	ForgeUI.RegisterWindowPosition(self, self.wndStanceBar, "ForgeUI_StanceBar", self.wndMovables:FindChild("Movable_StanceBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndPathBar, "ForgeUI_PathBar", self.wndMovables:FindChild("Movable_PathBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndRecallBar, "ForgeUI_RecallBar", self.wndMovables:FindChild("Movable_RecallBar"))
@@ -539,6 +540,7 @@ end
 
 function ForgeUI_ActionBars:OnMovableMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
 	self.wndActionBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_ActionBar"):GetAnchorOffsets())
+	self.wndSideBar1:SetAnchorOffsets(self.wndMovables:FindChild("Movable_SideBar1"):GetAnchorOffsets())
 	self.wndStanceBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_StanceBar"):GetAnchorOffsets())
 	self.wndPathBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PathBar"):GetAnchorOffsets())
 	self.wndMountBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_MountBar"):GetAnchorOffsets())
