@@ -64,6 +64,7 @@ end
 function ForgeUI_ActionBars:ForgeAPI_AfterRegistration()
 	self.wndActionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBar", nil, self)
 	self.wndSideBar1 = Apollo.LoadForm(self.xmlDoc, "ForgeUI_SideBar1", nil, self)
+	self.wndShortcuBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ShortcutBar", nil, self)
 	self.wndStanceBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_StanceBar", nil, self)
 	self.wndGadgetBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_GadgetBar", nil, self)
 	self.wndPotionBar = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PotionBar", nil, self)
@@ -73,7 +74,8 @@ function ForgeUI_ActionBars:ForgeAPI_AfterRegistration()
 	
 	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
 	
-	Apollo.RegisterEventHandler("AbilityBookChange", "RedrawActionBars", self)
+	Apollo.RegisterEventHandler("AbilityBookChange", 		"RedrawActionBars", self)
+	Apollo.RegisterEventHandler("ShowActionBarShortcut", 	"ShowShortcutBar", self)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -96,6 +98,7 @@ function ForgeUI_ActionBars:RedrawActionBars()
 	self:RedrawMounts()
 	self:RedrawPotions()
 	self:RedrawStances()
+	self:RedrawShortcutBar()
 end
 
 function ForgeUI_ActionBars:RedrawActionBar()
@@ -116,6 +119,27 @@ function ForgeUI_ActionBars:RedrawActionBar()
 		--wndActionBtn:FindChild("ActionBarButton"):SetType("ABar")
 		wndActionBtn:SetAnchorPoints(0, (1 / 12) * i, 1, (1 / 12) * (i + 1))
 	end
+end
+
+function ForgeUI_ActionBars:RedrawShortcutBar()
+	self.wndShortcuBar:DestroyChildren()
+
+	local nCount = 0
+	for idx = 4, ActionSetLib.CodeEnumShortcutSet.Count do
+		if IsActionBarSetVisible(idx) then
+			nCount = nCount + 1
+			for i = 0, 7 do
+				local wndActionBtn = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ShortcutBtn", self.wndShortcuBar, self)
+				wndActionBtn:FindChild("ActionBarButton"):SetContentId(idx * 12 + i)
+				wndActionBtn:SetAnchorPoints(0.125 * i, 0, 0.125 * (i + 1), 1)
+			end
+		end
+	end
+end
+
+function ForgeUI_ActionBars:ShowShortcutBar(nBar, bIsVisible, nShortcuts)
+	self:RedrawShortcutBar()
+   	self.wndShortcuBar:Show(bIsVisible, true)
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -530,6 +554,7 @@ function ForgeUI_ActionBars:ForgeAPI_AfterRestore()
 	ForgeUI.RegisterWindowPosition(self, self.wndGadgetBar, "ForgeUI_GadgetBar", self.wndMovables:FindChild("Movable_GadgetBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndMountBar, "ForgeUI_MountBar", self.wndMovables:FindChild("Movable_MountBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndPotionBar, "ForgeUI_PotionBar", self.wndMovables:FindChild("Movable_PotionBar"))
+	ForgeUI.RegisterWindowPosition(self, self.wndShortcuBar, "ForgeUI_ShortcutBar", self.wndMovables:FindChild("Movable_ShortcutBar"))
 	
 	self:RedrawActionBars()
 end
@@ -547,6 +572,7 @@ function ForgeUI_ActionBars:OnMovableMove( wndHandler, wndControl, nOldLeft, nOl
 	self.wndRecallBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_RecallBar"):GetAnchorOffsets())
 	self.wndGadgetBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_GadgetBar"):GetAnchorOffsets())
 	self.wndPotionBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PotionBar"):GetAnchorOffsets())
+	self.wndShortcuBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_ShortcutBar"):GetAnchorOffsets())
 end
 
 -----------------------------------------------------------------------------------------------
