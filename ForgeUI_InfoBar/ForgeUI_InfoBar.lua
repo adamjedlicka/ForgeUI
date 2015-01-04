@@ -60,8 +60,6 @@ end
 function ForgeUI_InfoBar:OnDocLoaded()
 	if self.xmlDoc == nil or not self.xmlDoc:IsLoaded() then return end
 
-	if self.xmlDoc == nil and not self.xmlDoc:IsLoaded() then return end
-	
 	if ForgeUI == nil then -- forgeui loaded
 		ForgeUI = Apollo.GetAddon("ForgeUI")
 	end
