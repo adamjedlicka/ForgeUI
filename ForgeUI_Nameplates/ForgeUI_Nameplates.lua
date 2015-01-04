@@ -50,6 +50,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBars = false,
 			bShowCast = false,
 			bShowClassColors = true,
+			nHideBarsOver = 100,
 			crName = "FFFFFFFF",
 			crBar = "FFFFFFFF"
 		},
@@ -63,6 +64,7 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = false,
 			bShowBarsInCombat = true,
+			nHideBarsOver = 100,
 			bShowCast = true,
 			crName = "FFD9544D",
 			crBar = "FFE50000"
@@ -71,6 +73,7 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = false,
 			bShowBarsInCombat = true,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFF569",
 			crBar = "FFF3D829"
@@ -79,6 +82,7 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = false,
 			bShowBarsInCombat = false,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FF76CD26",
 			crBar = "FF15B01A"
@@ -94,6 +98,7 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = true,
 			bShowBarsInCombat = true,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			bShowClassColors = true,
 			crName = "FFFFFFFF",
@@ -103,6 +108,7 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = true,
 			bShowBarsInCombat = true,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			bShowClassColors = true,
 			crName = "FF43C8F3",
@@ -112,6 +118,7 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = true,
 			bShowBarsInCombat = true,
+			nHideBarsOver = 100,
 			bShowCast = true,
 			bShowClassColors = true,
 			crName = "FFD9544D",
@@ -271,17 +278,21 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 		progressBar:SetMax(unitOwner:GetMaxHealth())
 		progressBar:SetProgress(unitOwner:GetHealth())
 		
-		local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
-		if nTime > 0 then
-			progressBar:SetBarColor(self.tSettings.crMooBar)
+		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
+			tNameplate.wnd.hp:Show(false)
 		else
-			if unitOwner:GetType() == "Player" and self.tSettings["t" .. tNameplate.unitType].bShowClassColors then
-				progressBar:SetBarColor("FF" .. ForgeUI.GetSettings().classColors[tClassEnums[unitOwner:GetClassId()]])
+			local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
+			if nTime > 0 then
+				progressBar:SetBarColor(self.tSettings.crMooBar)
 			else
-				progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
+				if unitOwner:GetType() == "Player" and self.tSettings["t" .. tNameplate.unitType].bShowClassColors then
+					progressBar:SetBarColor("FF" .. ForgeUI.GetSettings().classColors[tClassEnums[unitOwner:GetClassId()]])
+				else
+					progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
+				end
 			end
+			tNameplate.wnd.hp:Show(true)
 		end
-		tNameplate.wnd.hp:Show(true)
 	else
 		tNameplate.wnd.hp:Show(false)
 	end
