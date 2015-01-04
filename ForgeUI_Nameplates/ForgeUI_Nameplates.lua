@@ -251,8 +251,10 @@ function ForgeUI_Nameplates:UpdateNameplates()
 		
 		--if tNameplate.unitOwner == self.unitPlayer:GetTarget() then
 		--	tNameplate.wnd.marker:Show(self.tSettings.tTarget.bShowMarker)
+		--	tNameplate.bIsTarget = true
 		--else
 		--	tNameplate.wnd.marker:Show(false)
+		--	tNameplate.bIsTarget = false
 		--end
 	
 		tNameplate.unitType = self:GetUnitType(tNameplate.unitOwner)

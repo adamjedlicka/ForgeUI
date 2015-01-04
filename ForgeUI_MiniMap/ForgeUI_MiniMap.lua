@@ -237,12 +237,12 @@ function ForgeUI_MiniMap:UpdateZoneName()
 
 	local strDifficulty = nil
 	if tInstanceSettingsInfo.eWorldDifficulty == GroupLib.Difficulty.Veteran then
-		strDifficulty = ktInstanceSettingTypeStrings.Veteran
+		strDifficulty = "Veteran"
 	end
 
 	local strScaled = nil
 	if tInstanceSettingsInfo.bWorldForcesLevelScaling == true then
-		strScaled = ktInstanceSettingTypeStrings.Rallied
+		strScaled = "Scalled"
 	end
 
 	local strAdjustedZoneName = strZoneName
