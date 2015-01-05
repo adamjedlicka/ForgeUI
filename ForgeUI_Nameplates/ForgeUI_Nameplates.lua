@@ -51,6 +51,7 @@ function ForgeUI_Nameplates:new(o)
 		nHpBarHeight = 7,
 		nShieldBarHeight = 4,
 		bShowShieldBars = true,
+		bShowRewardIcons = true,
 		tPlayer = {
 			bShow = false,
 			bShowBars = false,
@@ -274,8 +275,27 @@ end
 
 -- update name
 function ForgeUI_Nameplates:UpdateName(tNameplate)
-	tNameplate.wnd.name:SetText(tNameplate.unitOwner:GetName())
-	tNameplate.wnd.name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
+	local name = tNameplate.wnd.name
+
+	name:SetText(tNameplate.unitOwner:GetName())
+	name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
+	
+	local nNameWidth = Apollo.GetTextWidth("Nameplates", tNameplate.unitOwner:GetName() .. " ")
+	name:SetAnchorOffsets(- (nNameWidth / 2), 0, (nNameWidth / 2), -15)
+	
+	if self.tSettings.bShowRewardIcons then
+		local questIcon = tNameplate.wnd.quest
+		local tRewardInfo = tNameplate.unitOwner:GetRewardInfo()
+		local bIsReward = false
+		
+		if tRewardInfo ~= nil and #tRewardInfo > 0 then
+			bIsReward = true
+		end
+		
+		if questIcon:IsShown() ~= bIsReward then
+			questIcon:Show(bIsReward, true)
+		end
+	end
 end
 
 -- update healthbar
@@ -569,7 +589,8 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 			castText = wnd:FindChild("CastBar"):FindChild("Text"),
 			marker = wnd:FindChild("Marker"),
 			ia = wnd:FindChild("IA"),
-			iaText = wnd:FindChild("IAText")
+			iaText = wnd:FindChild("IAText"),
+			quest = wnd:FindChild("QuestIndicator")
 		}
 	}
 	
@@ -641,7 +662,11 @@ function ForgeUI_Nameplates:IsImportantNPC(unitOwner)
 end
 
 function ForgeUI_Nameplates:OnNameplateClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
-	GameLib.SetTargetUnit(wndHandler:GetParent():GetParent():GetUnit())
+	if wndControl:GetName() == "Bar" or wndControl:GetName() == "Name" then
+		GameLib.SetTargetUnit(wndControl:GetParent():GetUnit())
+	elseif wndControl:GetName() == "HPBar" or wndControl:GetName() == "ShieldBar" then
+		GameLib.SetTargetUnit(wndControl:GetParent():GetParent():GetUnit())
+	end
 end
 
 -----------------------------------------------------------------------------------------------
