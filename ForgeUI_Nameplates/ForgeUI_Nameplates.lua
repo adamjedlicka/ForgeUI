@@ -45,8 +45,12 @@ function ForgeUI_Nameplates:new(o)
 		bOnlyImportantNPCs = true,
 		crMooBar = "FF7E00FF",
 		crCastBar = "FFFEB308",
+		crShieldBar = "FF0699F3",
 		crBarBgColor = "FF101010",
 		bUseOcclusion = true,
+		nHpBarHeight = 7,
+		nShieldBarHeight = 4,
+		bShowShieldBars = true,
 		tPlayer = {
 			bShow = false,
 			bShowBars = false,
@@ -277,7 +281,7 @@ end
 -- update healthbar
 function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 	if self.tSettings["t" ..tNameplate.unitType].bShowBars == nil then 
-		tNameplate.wnd.bar:Show(false)	
+		tNameplate.wnd.bar:Show(false, true)	
 		return
 	end
 
@@ -292,7 +296,7 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 		progressBar:SetProgress(unitOwner:GetHealth())
 		
 		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
-			tNameplate.wnd.bar:Show(false)
+			tNameplate.wnd.bar:Show(false, true)
 		else
 			local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
 			if nTime > 0 then
@@ -304,10 +308,35 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 					progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
 				end
 			end
-			tNameplate.wnd.bar:Show(true)
+			tNameplate.wnd.bar:Show(true, true)
 		end
 	else
-		tNameplate.wnd.bar:Show(false)
+		tNameplate.wnd.bar:Show(false, true)
+	end
+	
+	if  self.tSettings.bShowShieldBars then self:UpdateShield(tNameplate) end
+end
+
+-- update shieldbar
+function ForgeUI_Nameplates:UpdateShield(tNameplate)
+	local unitOwner = tNameplate.unitOwner
+	local bar = tNameplate.wnd.shield
+	local progressBar = tNameplate.wnd.shieldBar
+	
+	local bShow = false
+	local nMax = unitOwner:GetShieldCapacityMax()
+	local nValue = unitOwner:GetShieldCapacity()
+	
+	if nValue ~= 0 then
+		progressBar:SetMax(nMax)
+		progressBar:SetProgress(nValue)
+		
+		bShow = true
+	end
+	
+	if bar:IsShown() ~= bShow then
+		bar:Show(bShow, true)
+		self:UpdateStyle(tNameplate)
 	end
 end
 
@@ -326,12 +355,12 @@ function ForgeUI_Nameplates:UpdateCast(tNameplate)
 			progressBar:SetMax(fDuration)
 			progressBar:SetProgress(fDuration - fElapsed)
 			
-			tNameplate.wnd.cast:Show(true)
+			tNameplate.wnd.cast:Show(true, true)
 		else
-			tNameplate.wnd.cast:Show(false)
+			tNameplate.wnd.cast:Show(false, true)
 		end
 	else
-		tNameplate.wnd.cast:Show(false)
+		tNameplate.wnd.cast:Show(false, true)
 	end
 end
 
@@ -342,7 +371,7 @@ function ForgeUI_Nameplates:UpdateMarker(tNameplate)
 	local bShow = tNameplate.bIsTarget and self.tSettings.tTarget.bShowMarker
 	
 	if wnd.marker:IsShown() ~= bShow
-		then wnd.marker:Show(bShow)
+		then wnd.marker:Show(bShow, true)
 	end
 end
 
@@ -386,7 +415,7 @@ function ForgeUI_Nameplates:UpdateNameplateVisibility(tNameplate)
 	if not bVisible then bVisible = self.tSettings.tTarget.bShow and tNameplate.bIsTarget end
 	
 	if bVisible ~= tNameplate.bShow then
-		wndNameplate:Show(bVisible)
+		wndNameplate:Show(bVisible, true)
 		tNameplate.bShow = bVisible
 	end
 	
@@ -397,9 +426,21 @@ function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 	local wnd = tNameplate.wnd
 	
 	wnd.hp:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
+	wnd.shield:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
+	wnd.shieldBar:SetBarColor(self.tSettings.crShieldBar)
 	wnd.castBar:SetBarColor(self.tSettings.crCastBar)
 	wnd.cast:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
 	wnd.marker:SetBGColor(self.tSettings.tTarget.crMarker)
+	
+	local nLeft, nTop, nRight, nBottom = wnd.bar:GetAnchorOffsets()
+	if tNameplate.wnd.shield:IsShown() then
+		wnd.bar:SetAnchorOffsets(nLeft, nTop, nRight, nTop + self.tSettings.nHpBarHeight + self.tSettings.nShieldBarHeight - 1)
+		wnd.hp:SetAnchorOffsets(0, 0, 0, self.tSettings.nHpBarHeight)
+		wnd.shield:SetAnchorOffsets(0, - self.tSettings.nShieldBarHeight, 0, 0)
+	else
+		wnd.bar:SetAnchorOffsets(nLeft, nTop, nRight, nTop + self.tSettings.nHpBarHeight)
+		wnd.hp:SetAnchorOffsets(0, 0, 0, self.tSettings.nHpBarHeight)
+	end
 end
 
 function ForgeUI_Nameplates:IsNameplateInRange(tNameplate)
@@ -521,6 +562,8 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 			bar = wnd:FindChild("Bar"),
 			hp = wnd:FindChild("HPBar"),
 			hpBar = wnd:FindChild("HPBar"):FindChild("ProgressBar"),
+			shield = wnd:FindChild("ShieldBar"),
+			shieldBar = wnd:FindChild("ShieldBar"):FindChild("ProgressBar"),
 			cast = wnd:FindChild("CastBar"),
 			castBar = wnd:FindChild("CastBar"):FindChild("ProgressBar"),
 			castText = wnd:FindChild("CastBar"):FindChild("Text"),
@@ -535,6 +578,8 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 		--	wnd:Destroy()
 		--	return
 		--end
+		
+		tNameplate.wnd.shield:Show(self.tSettings.bShowShieldBars, true)
 		
 		self:UpdateStyle(tNameplate)
 		
