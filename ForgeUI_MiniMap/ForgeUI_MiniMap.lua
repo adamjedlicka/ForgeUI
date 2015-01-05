@@ -147,6 +147,8 @@ function ForgeUI_MiniMap:HandleNewUnits()
 		if unit == nil or not unit:IsValid() then return end
 	
 		if unit:GetType() == "Player" then
+			if unit:IsThePlayer() then return end	
+		
 			self.tUnits.tPlayers[unit:GetId()] = unit
 			
 			local tInfo = self:GetDefaultMarker(unit)
