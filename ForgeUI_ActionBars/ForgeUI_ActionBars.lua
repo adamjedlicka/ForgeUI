@@ -109,14 +109,11 @@ function ForgeUI_ActionBars:RedrawActionBar()
 		local wndActionBtn = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBtn", self.wndActionBar, self)
 		wndActionBtn:FindChild("ActionBarButton"):SetContentId(i)
 		wndActionBtn:SetAnchorPoints(0.125 * i, 0, 0.125 * (i + 1), 1)
-		--local nLeft, nTop, nRight, nBottom = wndActionBtn:GetAnchorOffsets()
-		--wndActionBtn:SetAnchorOffsets(nLeft - i, nTop, nRight - i, nBottom)
 	end
 	
-	for i = 0, 12 do
+	for i = 0, 11 do
 		local wndActionBtn = Apollo.LoadForm(self.xmlDoc, "ForgeUI_ActionBtn1", self.wndSideBar1, self)
 		wndActionBtn:FindChild("ActionBarButton"):SetContentId(i + 12)
-		--wndActionBtn:FindChild("ActionBarButton"):SetType("ABar")
 		wndActionBtn:SetAnchorPoints(0, (1 / 12) * i, 1, (1 / 12) * (i + 1))
 	end
 end

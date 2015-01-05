@@ -45,6 +45,7 @@ function ForgeUI_Nameplates:new(o)
 		bOnlyImportantNPCs = true,
 		crMooBar = "FF7E00FF",
 		crCastBar = "FFFEB308",
+		bUseOcclusion = true,
 		tPlayer = {
 			bShow = false,
 			bShowBars = false,
@@ -335,6 +336,7 @@ function ForgeUI_Nameplates:UpdateNameplateVisibility(tNameplate)
 	if bVisible then bVisible = self.tSettings["t" .. tNameplate.unitType].bShow end
 	if bVisible then bVisible = self:IsNameplateInRange(tNameplate) end
 	if bVisible and self.tSettings.bOnlyImportantNPCs and tNameplate.unitType == "Friendly" then bVisible = tNameplate.bIsImportant end
+	if bVisible and self.tSettings.bUseOcclusion then bVisible = not tNameplate.bOccluded end
 	
 	if bVisible ~= tNameplate.bShow then
 		wndNameplate:Show(bVisible)
