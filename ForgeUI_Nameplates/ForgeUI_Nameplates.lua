@@ -45,6 +45,7 @@ function ForgeUI_Nameplates:new(o)
 		bOnlyImportantNPCs = true,
 		crMooBar = "FF7E00FF",
 		crCastBar = "FFFEB308",
+		crBarBgColor = "FF101010",
 		bUseOcclusion = true,
 		tPlayer = {
 			bShow = false,
@@ -59,7 +60,8 @@ function ForgeUI_Nameplates:new(o)
 			bShow = true,
 			bShowBars = true,
 			bShowCast = true,
-			bShowMarker = true
+			bShowMarker = true,
+			crMarker = "FFFFFFFF"
 		},
 		tHostile = {
 			bShow = true,
@@ -192,6 +194,7 @@ function ForgeUI_Nameplates:OnLoad()
 	
 	Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", self)
 	Apollo.RegisterEventHandler("UnitDestroyed", "OnUnitDestroyed", self)
+	Apollo.RegisterEventHandler("TargetUnitChanged", "OnTargetUnitChanged", self)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -217,12 +220,6 @@ end
 function ForgeUI_Nameplates:OnFrame()
 	self.unitPlayer = GameLib.GetPlayerUnit()
 	
-	--if self.unitPlayer:GetTarget() ~= nil then
-	--	for k, v in pairs(self.unitPlayer:GetTarget():GetActivationState()) do
-	--		Print(k)
-	--	end
-	--end
-	
 	self:AddNewUnits()
 	self:UpdateNameplates()
 end
@@ -240,49 +237,62 @@ function ForgeUI_Nameplates:OnUnitDestroyed(unit)
 	self.tNameplates[unit:GetId()] = nil
 end
 
+function ForgeUI_Nameplates:OnTargetUnitChanged(unit)
+	for _, tNameplate in pairs(self.tNameplates) do
+		tNameplate.bIsTarget = false
+	end
+	
+	if unit == nil then return end
+	
+	local tNameplate = self.tNameplates[unit:GetId()]
+	if tNameplate == nil then return end
+	
+	if GameLib.GetTargetUnit() == unit then
+		tNameplate.bIsTarget = true
+	end
+end
+
 -----------------------------------------------------------------------------------------------
 -- ForgeUI_Nameplates Nameplate functions
 -----------------------------------------------------------------------------------------------
 function ForgeUI_Nameplates:UpdateNameplates()
 	for idx, tNameplate in pairs(self.tNameplates) do
-		if tNameplate.unitOwner:IsDead() then
-			self:OnUnitDestroyed(tNameplate.unitOwner)
-			return
+		if self:UpdateNameplateVisibility(tNameplate) then
+			tNameplate.unitType = self:GetUnitType(tNameplate.unitOwner)
+			self:UpdateName(tNameplate)
+			self:UpdateHealth(tNameplate)
+			self:UpdateCast(tNameplate)
+			self:UpdateMarker(tNameplate)
+			self:UpdateArmor(tNameplate)
 		end
-		
-		--if tNameplate.unitOwner == self.unitPlayer:GetTarget() then
-		--	tNameplate.wnd.marker:Show(self.tSettings.tTarget.bShowMarker)
-		--	tNameplate.bIsTarget = true
-		--else
-		--	tNameplate.wnd.marker:Show(false)
-		--	tNameplate.bIsTarget = false
-		--end
-	
-		tNameplate.unitType = self:GetUnitType(tNameplate.unitOwner)
-		self:UpdateName(tNameplate)
-		self:UpdateHealth(tNameplate)
-		self:UpdateCast(tNameplate)
-	
-		self:UpdateNameplateVisibility(tNameplate)
 	end
 end
 
+-- update name
 function ForgeUI_Nameplates:UpdateName(tNameplate)
 	tNameplate.wnd.name:SetText(tNameplate.unitOwner:GetName())
 	tNameplate.wnd.name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
 end
 
+-- update healthbar
 function ForgeUI_Nameplates:UpdateHealth(tNameplate)
+	if self.tSettings["t" ..tNameplate.unitType].bShowBars == nil then 
+		tNameplate.wnd.bar:Show(false)	
+		return
+	end
+
 	local unitOwner = tNameplate.unitOwner
 	local progressBar = tNameplate.wnd.hpBar
 	
-	if self.tSettings["t" ..tNameplate.unitType].bShowBars or self.tSettings["t" ..tNameplate.unitType].bShowBarsInCombat and unitOwner:IsInCombat() then
+	if self.tSettings["t" ..tNameplate.unitType].bShowBars
+		or self.tSettings["t" ..tNameplate.unitType].bShowBarsInCombat and unitOwner:IsInCombat()
+		or self.tSettings.tTarget.bShowBars and tNameplate.bIsTarget then
 	
 		progressBar:SetMax(unitOwner:GetMaxHealth())
 		progressBar:SetProgress(unitOwner:GetHealth())
 		
 		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
-			tNameplate.wnd.hp:Show(false)
+			tNameplate.wnd.bar:Show(false)
 		else
 			local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
 			if nTime > 0 then
@@ -294,19 +304,20 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 					progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
 				end
 			end
-			tNameplate.wnd.hp:Show(true)
+			tNameplate.wnd.bar:Show(true)
 		end
 	else
-		tNameplate.wnd.hp:Show(false)
+		tNameplate.wnd.bar:Show(false)
 	end
 end
 
+-- update castbar
 function ForgeUI_Nameplates:UpdateCast(tNameplate)
 	local unitOwner = tNameplate.unitOwner
 	local progressBar = tNameplate.wnd.castBar
 	
-	if self.tSettings["t" ..tNameplate.unitType].bShowCast then
-		if unitOwner:IsCasting() then
+	if self.tSettings["t" ..tNameplate.unitType].bShowCast or self.tSettings.tTarget.bShowCast and tNameplate.bIsTarget then
+		if unitOwner:ShouldShowCastBar() then
 			local fDuration = unitOwner:GetCastDuration()
 			local fElapsed = unitOwner:GetCastElapsed()	
 			local strSpellName = unitOwner:GetCastName()
@@ -324,24 +335,71 @@ function ForgeUI_Nameplates:UpdateCast(tNameplate)
 	end
 end
 
+-- update marker
+function ForgeUI_Nameplates:UpdateMarker(tNameplate)
+	local wnd = tNameplate.wnd
+
+	local bShow = tNameplate.bIsTarget and self.tSettings.tTarget.bShowMarker
+	
+	if wnd.marker:IsShown() ~= bShow
+		then wnd.marker:Show(bShow)
+	end
+end
+
+function ForgeUI_Nameplates:UpdateArmor(tNameplate)
+	local unitOwner = tNameplate.unitOwner
+	local ia = tNameplate.wnd.ia
+	local iaText = tNameplate.wnd.iaText
+	
+	nValue = unitOwner:GetInterruptArmorValue()
+	nMax = unitOwner:GetInterruptArmorMax()
+	if nMax == 0 or nValue == nil or unitOwner:IsDead() then
+		ia:Show(false, true)
+	else
+		ia:Show(true, true)
+		if nMax == -1 then
+			ia:SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
+			iaText:SetText("")
+		elseif nMax > 0 then
+			ia:SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
+			iaText:SetText(nValue)
+		end
+	end
+end
+
+
+-- visibility check
 function ForgeUI_Nameplates:UpdateNameplateVisibility(tNameplate)
 	local unitOwner = tNameplate.unitOwner
 	local wndNameplate = tNameplate.wndNameplate
 	
 	tNameplate.bOnScreen = wndNameplate:IsOnScreen()
 	tNameplate.bOccluded = wndNameplate:IsOccluded()
-	tNameplate.eDisposition = unitOwner:GetDispositionTo(self.unitPlayer)
 	
 	local bVisible = tNameplate.bOnScreen
 	if bVisible then bVisible = self.tSettings["t" .. tNameplate.unitType].bShow end
 	if bVisible then bVisible = self:IsNameplateInRange(tNameplate) end
 	if bVisible and self.tSettings.bOnlyImportantNPCs and tNameplate.unitType == "Friendly" then bVisible = tNameplate.bIsImportant end
 	if bVisible and self.tSettings.bUseOcclusion then bVisible = not tNameplate.bOccluded end
+	if bVisible then bVisible = not unitOwner:IsDead() end
+	
+	if not bVisible then bVisible = self.tSettings.tTarget.bShow and tNameplate.bIsTarget end
 	
 	if bVisible ~= tNameplate.bShow then
 		wndNameplate:Show(bVisible)
 		tNameplate.bShow = bVisible
 	end
+	
+	return bVisible
+end
+
+function ForgeUI_Nameplates:UpdateStyle(tNameplate)
+	local wnd = tNameplate.wnd
+	
+	wnd.hp:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
+	wnd.castBar:SetBarColor(self.tSettings.crCastBar)
+	wnd.cast:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
+	wnd.marker:SetBGColor(self.tSettings.tTarget.crMarker)
 end
 
 function ForgeUI_Nameplates:IsNameplateInRange(tNameplate)
@@ -366,7 +424,7 @@ function ForgeUI_Nameplates:IsNameplateInRange(tNameplate)
 	local nDistance = (nDeltaX * nDeltaX) + (nDeltaY * nDeltaY) + (nDeltaZ * nDeltaZ)
 
 	if tNameplate.bIsTarget then
-		bInRange = nDistance < knTargetRange
+		bInRange = nDistance < 40000
 		return bInRange
 	else
 		bInRange = nDistance < (self.tSettings.nMaxRange * self.tSettings.nMaxRange) -- squaring for quick maths
@@ -460,20 +518,21 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 		wndNameplate 	= wnd,
 		wnd = {
 			name = wnd:FindChild("Name"),
+			bar = wnd:FindChild("Bar"),
 			hp = wnd:FindChild("HPBar"),
 			hpBar = wnd:FindChild("HPBar"):FindChild("ProgressBar"),
 			cast = wnd:FindChild("CastBar"),
 			castBar = wnd:FindChild("CastBar"):FindChild("ProgressBar"),
 			castText = wnd:FindChild("CastBar"):FindChild("Text"),
-			marker = wnd:FindChild("Marker")
+			marker = wnd:FindChild("Marker"),
+			ia = wnd:FindChild("IA"),
+			iaText = wnd:FindChild("IAText")
 		}
 	}
 	
-	if self.tSettings["t" .. tNameplate.unitType].bShow then
-		tNameplate.wnd.castBar:SetBarColor(self.tSettings.crCastBar)
+	self:UpdateStyle(tNameplate)
 	
-		self.tNameplates[unitNew:GetId()] = tNameplate
-	end
+	self.tNameplates[unitNew:GetId()] = tNameplate
 	
 	return tNameplate
 end
