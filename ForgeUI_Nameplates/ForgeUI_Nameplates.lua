@@ -530,11 +530,21 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 		}
 	}
 	
-	self:UpdateStyle(tNameplate)
-	
-	self.tNameplates[unitNew:GetId()] = tNameplate
-	
-	return tNameplate
+	if self.tSettings["t" .. tNameplate.unitType].bShow then
+		--if tNameplate.unitType == "Friendly" and not self:IsImportantNPC(unitNew) and self.tSettings.bOnlyImportantNPCs then
+		--	wnd:Destroy()
+		--	return
+		--end
+		
+		self:UpdateStyle(tNameplate)
+		
+		self.tNameplates[unitNew:GetId()] = tNameplate
+		
+		return tNameplate
+	else
+		wnd:Destroy()
+		return
+	end
 end
 
 function ForgeUI_Nameplates:IsImportantNPC(unitOwner)

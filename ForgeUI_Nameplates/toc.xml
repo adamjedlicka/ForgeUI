@@ -2,5 +2,5 @@
 <Addon Author="WintyBadass" APIVersion="9" Name="ForgeUI_Nameplates" Description="">
     <Script Name="ForgeUI_Nameplates.lua"/>
     <Form Name="ForgeUI_Nameplates.xml"/>
-    <ReplaceAddon Name="Nameplates"/>
+	<ReplaceAddon Name="Nameplates"/>
 </Addon>
