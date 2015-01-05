@@ -586,7 +586,7 @@ function ForgeUI_Nameplates:IsImportantNPC(unitOwner)
 end
 
 function ForgeUI_Nameplates:OnNameplateClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
-	GameLib.SetTargetUnit(wndHandler:GetParent():GetUnit())
+	GameLib.SetTargetUnit(wndHandler:GetParent():GetParent():GetUnit())
 end
 
 -----------------------------------------------------------------------------------------------
