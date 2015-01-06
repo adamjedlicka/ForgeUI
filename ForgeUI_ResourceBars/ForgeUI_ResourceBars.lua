@@ -33,39 +33,30 @@ function ForgeUI_ResourceBars:new(o)
 	
 	-- optional
 	self.tSettings = {
-		smoothBars = false,
-		borderColor = "000000",
-		backgroundColor = "131313",
-		backgroundBarColor = "101010",
+		bSmoothBars = false,
+		crBorder = "FF000000",
+		crBackground = "FF101010",
 		warrior = {
-			resourceColor1 = "E53805",
-			resourceColor2 = "EF0000",
-			resourceColor3 = ""
+			crResource1 = "FFE53805",
+			crResource2 = "FFEF0000"
 		},
 		stalker = {
-			resourceColor1 = "D23EF4",
-			resourceColor2 = "",
-			resourceColor3 = ""
+			crResource1 = "FFD23EF4"
 		},
 		engineer = {
-			resourceColor1 = "00AEFF",
-			resourceColor2 = "FFB000",
-			resourceColor3 = ""
+			crResource1 = "FF00AEFF",
+			crResource2 = "FFFFB000"
 		},
 		esper = {
-			resourceColor1 = "1591DB",
-			resourceColor2 = "",
-			resourceColor3 = ""
+			crResource1 = "FF1591DB"
 		},
 		medic = {
-			resourceColor1 = "98C723",
-			resourceColor2 = "FFE757",
-			resourceColor3 = ""
+			crResource1 = "FF98C723",
+			crResource2 = "FFFFE757"
 		},
 		slinger = {
-			resourceColor1 = "FFE757",
-			resourceColor2 = "E53805",
-			resourceColor3 = ""
+			crResource1 = "FFFFE757",
+			crResource2 = "FFE53805"
 		}
 	}
 	
@@ -94,9 +85,13 @@ end
 
 function ForgeUI_ResourceBars:ForgeAPI_AfterRegistration()
 	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "Movables", nil, self)
+	
+	ForgeUI.AddItemButton(self, "Resource bars", "Container")
 end
 
 function ForgeUI_ResourceBars:ForgeAPI_AfterRestore()
+	self:LoadOptions()
+
 	if GameLib.GetPlayerUnit() then
 		self:OnCharacterCreated()
 	else
@@ -142,11 +137,13 @@ function ForgeUI_ResourceBars:OnEngineerCreated(unitPlayer)
 	self.playerMaxResource = unitPlayer:GetMaxResource(1)
 
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Engineer", "FixedHudStratumHigh", self)
-	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
-	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+	self.wndResource:FindChild("Border"):SetBGColor(self.tSettings.crBorder)
+	self.wndResource:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
 	self.wndResource:FindChild("ProgressBar"):SetMax(self.playerMaxResource)
 	
-	if self.tSettings.smoothBars then
+	self.wndContainers.Container:FindChild("EngineerContainer"):Show(true, true)
+	
+	if self.tSettings.bSmoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnEngineerUpdate", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnEngineerUpdate", self)
@@ -165,9 +162,9 @@ function ForgeUI_ResourceBars:OnEngineerUpdate()
 		self.wndResource:FindChild("Value"):SetText(nResource)
 		
 		if nResource < 30 or nResource > 70 then
-			self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.engineer.resourceColor1)
+			self.wndResource:FindChild("ProgressBar"):SetBarColor(self.tSettings.engineer.crResource1)
 		else
-			self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.engineer.resourceColor2)
+			self.wndResource:FindChild("ProgressBar"):SetBarColor(self.tSettings.engineer.crResource2)
 		end
 		
 		self.wndResource:Show(true, true)
@@ -186,14 +183,16 @@ function ForgeUI_ResourceBars:OnEsperCreated(unitPlayer)
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Esper", "FixedHudStratumHigh", self)
 	self.wndFocus = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Focus", "FixedHudStratumHigh", self)
 	
+	self.wndContainers.Container:FindChild("EsperContainer"):Show(true, true)
+	
 	for i = 1, self.playerMaxResource do
-		self.wndResource:FindChild("PSI" .. i):SetBGColor("FF" .. self.tSettings.borderColor)
-		self.wndResource:FindChild("PSI" .. i):FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
-		self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.esper.resourceColor1)
+		self.wndResource:FindChild("PSI" .. i):SetBGColor(self.tSettings.crBorder)
+		self.wndResource:FindChild("PSI" .. i):FindChild("Background"):SetBGColor(self.tSettings.crBackground)
+		self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetBarColor(self.tSettings.esper.crResource1)
 		self.wndResource:FindChild("PSI" .. i):FindChild("ProgressBar"):SetMax(1)
 	end
 	
-	if self.tSettings.smoothBars then
+	if self.tSettings.bSmoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnEsperUpdate", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnEsperUpdate", self)
@@ -236,13 +235,15 @@ function ForgeUI_ResourceBars:OnMedicCreated(unitPlayer)
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Medic", "FixedHudStratumHigh", self)
 	self.wndFocus = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Focus", "FixedHudStratumHigh", self)
 	
+	self.wndContainers.Container:FindChild("MedicContainer"):Show(true, true)
+	
 	for i = 1, self.playerMaxResource do
-		self.wndResource:FindChild("ACU" .. i):SetBGColor("FF" .. self.tSettings.borderColor)
-		self.wndResource:FindChild("ACU" .. i):FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+		self.wndResource:FindChild("ACU" .. i):SetBGColor(self.tSettings.crBorder)
+		self.wndResource:FindChild("ACU" .. i):FindChild("Background"):SetBGColor(self.tSettings.crBackground)
 		self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetMax(3)
 	end
 	
-	if self.tSettings.smoothBars then
+	if self.tSettings.bSmoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnMedicUpdate", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnMedicUpdate", self)
@@ -261,7 +262,7 @@ function ForgeUI_ResourceBars:OnMedicUpdate()
 	if unitPlayer:IsInCombat() or nResource < self.playerMaxResource then
 		for i = 1, self.playerMaxResource do
 			if nResource >= i then
-				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.medic.resourceColor1)
+				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetBarColor(self.tSettings.medic.crResource1)
 				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetProgress(3)
 			else
 				self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetProgress(0)
@@ -274,7 +275,7 @@ function ForgeUI_ResourceBars:OnMedicUpdate()
 						end
 					end
 					
-					self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.medic.resourceColor2)
+					self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetBarColor(self.tSettings.medic.crResource2)
 					self.wndResource:FindChild("ACU" .. i):FindChild("ProgressBar"):SetProgress(nAcu)
 				end
 			end
@@ -298,13 +299,15 @@ function ForgeUI_ResourceBars:OnSlingerCreated(unitPlayer)
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Slinger", "FixedHudStratumHigh", self)
 	self.wndFocus = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Focus", "FixedHudStratumHigh", self)
 	
+	self.wndContainers.Container:FindChild("SlingerContainer"):Show(true, true)
+	
 	for i = 1, 4 do
-		self.wndResource:FindChild("RUNE" .. i):SetBGColor("FF" .. self.tSettings.borderColor)
-		self.wndResource:FindChild("RUNE" .. i):FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+		self.wndResource:FindChild("RUNE" .. i):SetBGColor(self.tSettings.crBorder)
+		self.wndResource:FindChild("RUNE" .. i):FindChild("Background"):SetBGColor(self.tSettings.crBackground)
 		self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetMax(25)
 	end
 	
-	if self.tSettings.smoothBars then
+	if self.tSettings.bSmoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnSlingerUpdate", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnSlingerUpdate", self)
@@ -323,10 +326,10 @@ function ForgeUI_ResourceBars:OnSlingerUpdate()
 	if unitPlayer:IsInCombat() or GameLib.IsSpellSurgeActive() or nResource < self.playerMaxResource then
 		for i = 1, 4 do
 			if nResource >= (i * 25) then
-				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.slinger.resourceColor1)
+				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetBarColor(self.tSettings.slinger.crResource1)
 				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetProgress(25)
 			else
-				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.slinger.resourceColor2)
+				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetBarColor(self.tSettings.slinger.crResource2)
 				self.wndResource:FindChild("RUNE" .. i):FindChild("ProgressBar"):SetProgress(25 - ((i * 25) - nResource))
 			end
 		end
@@ -353,12 +356,14 @@ function ForgeUI_ResourceBars:OnStalkerCreated(unitPlayer)
 	self.playerMaxResource = unitPlayer:GetMaxResource(1)
 
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Stalker", "FixedHudStratumHigh", self)
-	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
-	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
-	self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.stalker.resourceColor1)
+	self.wndResource:FindChild("Border"):SetBGColor(self.tSettings.crBorder)
+	self.wndResource:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
+	self.wndResource:FindChild("ProgressBar"):SetBarColor(self.tSettings.stalker.crResource1)
 	self.wndResource:FindChild("ProgressBar"):SetMax(100)
 	
-	if self.tSettings.smoothBars then
+	self.wndContainers.Container:FindChild("StalkerContainer"):Show(true, true)
+	
+	if self.tSettings.bSmoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnStalkerUpdate", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnStalkerUpdate", self)
@@ -390,11 +395,13 @@ function ForgeUI_ResourceBars:OnWarriorCreated(unitPlayer)
 	self.playerMaxResource = unitPlayer:GetMaxResource(1)
 
 	self.wndResource = Apollo.LoadForm(self.xmlDoc, "ResourceBar_Warrior", "FixedHudStratumHigh", self)
-	self.wndResource:FindChild("Border"):SetBGColor("FF" .. self.tSettings.borderColor)
-	self.wndResource:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
+	self.wndResource:FindChild("Border"):SetBGColor(self.tSettings.crBorder)
+	self.wndResource:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
 	self.wndResource:FindChild("ProgressBar"):SetMax(self.playerMaxResource)
 	
-	if self.tSettings.smoothBars then
+	self.wndContainers.Container:FindChild("WarriorContainer"):Show(true, true)
+	
+	if self.tSettings.bSmoothBars then
 		Apollo.RegisterEventHandler("NextFrame", "OnWarriorUpdate", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnWarriorUpdate", self)
@@ -413,9 +420,9 @@ function ForgeUI_ResourceBars:OnWarriorUpdate()
 		self.wndResource:FindChild("Value"):SetText(nResource)
 		
 		if nResource < 750 then
-			self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.warrior.resourceColor1)
+			self.wndResource:FindChild("ProgressBar"):SetBarColor(self.tSettings.warrior.crResource1)
 		else
-			self.wndResource:FindChild("ProgressBar"):SetBarColor("FF" .. self.tSettings.warrior.resourceColor2)
+			self.wndResource:FindChild("ProgressBar"):SetBarColor(self.tSettings.warrior.crResource2)
 		end
 		
 		self.wndResource:Show(true, true)
@@ -469,6 +476,87 @@ function ForgeUI_ResourceBars:OnMovableMove( wndHandler, wndControl, nOldLeft, n
 	elseif wndControl:GetName() == "Movable_Focus" then
 		self.wndFocus:SetAnchorOffsets(wndControl:GetAnchorOffsets())
 	end
+end
+
+---------------------------------------------------------------------------------------------------
+-- Options
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_ResourceBars:OnOptionsChanged( wndHandler, wndControl )
+	if wndControl:GetName() == "SmoothBars_CheckBox" then
+		self.tSettings.bSmoothBars = wndControl:IsChecked()
+	elseif wndControl:GetName() == "BorderColor_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crBorder")
+	elseif wndControl:GetName() == "BackgroundColor_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crBackground")
+	end
+	
+	-- warrior
+	if wndControl:GetName() == "Warrior_Color1_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.warrior, "crResource1")
+	elseif wndControl:GetName() == "Warrior_Color2_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.warrior, "crResource2")
+	end
+	
+	-- stalker
+	if wndControl:GetName() == "Stalker_Color1_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.stalker, "crResource1")
+	end
+	
+	-- medic
+	if wndControl:GetName() == "Medic_Color1_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.medic, "crResource1")
+	elseif wndControl:GetName() == "Medic_Color2_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.medic, "crResource2")
+	end
+	
+	-- esper
+	if wndControl:GetName() == "Esper_Color1_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.esper, "crResource1")
+	end
+	
+	-- engineer
+	if wndControl:GetName() == "Engineer_Color1_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.engineer, "crResource1")
+	elseif wndControl:GetName() == "Engineer_Color2_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.engineer, "crResource2")
+	end
+	
+	-- slinger
+	if wndControl:GetName() == "Slinger_Color1_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.slinger, "crResource1")
+	elseif wndControl:GetName() == "Slinger_Color2_EditBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings.slinger, "crResource2")
+	end
+end
+
+function ForgeUI_ResourceBars:LoadOptions()
+	self.wndContainers.Container:FindChild("SmoothBars_CheckBox"):SetCheck(self.tSettings.bSmoothBars)
+	
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("BorderColor_EditBox"), self.tSettings, "crBorder", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("BackgroundColor_EditBox"), self.tSettings, "crBackground", true)
+	
+	-- warrior
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Warrior_Color1_EditBox"), self.tSettings.warrior, "crResource1", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Warrior_Color2_EditBox"), self.tSettings.warrior, "crResource2", true)
+	
+	-- stalker
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Stalker_Color1_EditBox"), self.tSettings.stalker, "crResource1", true)
+	
+	-- medic
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Medic_Color1_EditBox"), self.tSettings.medic, "crResource1", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Medic_Color2_EditBox"), self.tSettings.medic, "crResource2", true)
+	
+	-- esper
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Esper_Color1_EditBox"), self.tSettings.esper, "crResource1", true)
+	
+	-- engineer
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Engineer_Color1_EditBox"), self.tSettings.engineer, "crResource1", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Engineer_Color2_EditBox"), self.tSettings.engineer, "crResource2", true)
+	
+	-- slinger
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Slinger_Color1_EditBox"), self.tSettings.slinger, "crResource1", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container:FindChild("Slinger_Color2_EditBox"), self.tSettings.slinger, "crResource2", true)
 end
 
 -----------------------------------------------------------------------------------------------

@@ -135,13 +135,15 @@ function ForgeUI_Nameplates:new(o)
 		tFriendlyPet = {
 			bShow = false,
 			bShowBars = false,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFFFFF",
 			crBar = "FFFFFFFF"
 		},
 		tPlayerPet = {
 			bShow = true,
-			bShowBars = true,
+			bShowBars = false,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFFFFF",
 			crBar = "FFFFFFFF"
@@ -149,6 +151,7 @@ function ForgeUI_Nameplates:new(o)
 		tHostilePet = {
 			bShow = false,
 			bShowBars = false,
+			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFFFFF",
 			crBar = "FFFFFFFF"

@@ -231,7 +231,7 @@ function ForgeUI.GetSettings(arg)
 	end
 end
 
-function ForgeUI.ColorBoxChanged(wndControl, settings, data)
+function ForgeUI.ColorBoxChanged(wndControl, settings, data) -- deprecated
 	if settings ~= nil then
 		wndControl:SetText(settings)
 		wndControl:SetTextColor("ff" .. settings)
@@ -246,10 +246,50 @@ function ForgeUI.ColorBoxChanged(wndControl, settings, data)
 	if string.len(colorString) > 6 then
 		wndControl:SetText(string.sub(colorString, 0, 6))
 	elseif string.len(colorString) == 6 then
-		wndControl:SetTextColor("ff" .. colorString)
+		wndControl:SetTextColor("FF" .. colorString)
+		settings = "FF" .. colorString
 	end
 	
 	return wndControl
+end
+
+function ForgeUI.ColorBoxChange(tAddon, wndControl, tSettings, sValue, bOverwrite, bAlpha)
+	local sColor = "FFFFFFFF"
+	if bOverwrite then
+		if bAlpha then
+			sColor = sValue
+		else
+			sColor = string.sub(sValue, 3, 8)
+		end
+	end
+
+	sColor = wndControl:GetText()
+	
+	if tSettings ~= nil and bOverwrite then
+		if bAlpha then
+			sColor = string.sub(tSettings[sValue], 0, 8)
+		else
+			sColor = string.sub(tSettings[sValue], 3, 8)
+		end
+	end
+		
+	if bAlpha then
+		if string.len(sColor) > 8 then
+			wndControl:SetText(string.sub(sColor, 0, 8))
+		elseif string.len(sColor) == 8 then
+			wndControl:SetText(sColor)
+			wndControl:SetTextColor(sColor)
+			tSettings[sValue] = sColor
+		end
+	else
+		if string.len(sColor) > 6 then
+			wndControl:SetText(string.sub(sColor, 0, 6))
+		elseif string.len(sColor) == 6 then
+			wndControl:SetText(sColor)
+			wndControl:SetTextColor("FF" .. sColor)
+			tSettings[sValue] = "FF" .. sColor
+		end
+	end
 end
 
 -----------------------------------------------------------------------------------------------
