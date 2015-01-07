@@ -47,6 +47,8 @@ function ForgeUI_Nameplates:new(o)
 		crCastBar = "FFFEB308",
 		crShieldBar = "FFFFFFFF",
 		crBarBgColor = "FF101010",
+		crAbsorbBar = "FFFFC600",
+		bShowAbsorbBar = true,
 		bUseOcclusion = true,
 		nHpBarHeight = 7,
 		nShieldBarHeight = 4,
@@ -287,6 +289,7 @@ function ForgeUI_Nameplates:UpdateNameplate(tNameplate)
 	self:UpdateGuild(tNameplate)
 	self:UpdateHealth(tNameplate)
 	self:UpdateShield(tNameplate)
+	self:UpdateAbsorb(tNameplate)
 	self:UpdateCast(tNameplate)
 	self:UpdateMarker(tNameplate)
 	self:UpdateArmor(tNameplate)
@@ -377,7 +380,7 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 		progressBar:SetProgress(unitOwner:GetHealth())
 		
 		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
-			tNameplate.wnd.bar:Show(false, true)
+			bShow = false
 		else
 			local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
 			if nTime > 0 then
@@ -427,6 +430,32 @@ function ForgeUI_Nameplates:UpdateShield(tNameplate)
 	end
 end
 
+-- update absorbbar
+function ForgeUI_Nameplates:UpdateAbsorb(tNameplate)
+	local unitOwner = tNameplate.unitOwner
+	local absorbBar = tNameplate.wnd.absorbBar
+	
+	local bShow = false
+	
+	if self.tSettings.bShowAbsorbBar then
+		local nValue = unitOwner:GetAbsorptionValue()
+		
+		if nValue > 0 or not unitOwner:IsDead() then
+			local nMax = unitOwner:GetAbsorptionMax()
+		
+			absorbBar:SetMax(nMax)
+			absorbBar:SetProgress(nValue)
+			
+			bShow = true
+		end           
+	end
+	
+	if bShow ~= absorbBar:IsShown() then
+		absorbBar:Show(nShow, true)
+		self:UpdateStyle(tNameplate)
+	end
+end
+
 -- update castbar
 function ForgeUI_Nameplates:UpdateCast(tNameplate)
 	local unitOwner = tNameplate.unitOwner
@@ -469,7 +498,7 @@ function ForgeUI_Nameplates:UpdateArmor(tNameplate)
 	
 	nValue = unitOwner:GetInterruptArmorValue()
 	nMax = unitOwner:GetInterruptArmorMax()
-	if nMax == 0 or nValue == nil or unitOwner:IsDead() then
+	if nMax == 0 or nValue == nil or unitOwner:IsDead() or tNameplate.wnd.hp:IsShown() == false then
 		ia:Show(false, true)
 	else
 		ia:Show(true, true)
@@ -515,6 +544,7 @@ function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 	wnd.hp:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
 	wnd.shield:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
 	wnd.shieldBar:SetBarColor(self.tSettings.crShieldBar)
+	wnd.absorbBar:SetBarColor(self.tSettings.crAbsorbBar)
 	wnd.castBar:SetBarColor(self.tSettings.crCastBar)
 	wnd.cast:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
 	wnd.marker:SetBGColor(self.tSettings.tTarget.crMarker)
@@ -658,6 +688,7 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 			bar = wnd:FindChild("Bar"),
 			hp = wnd:FindChild("HPBar"),
 			hpBar = wnd:FindChild("HPBar"):FindChild("ProgressBar"),
+			absorbBar = wnd:FindChild("AbsorbBar"),
 			shield = wnd:FindChild("ShieldBar"),
 			shieldBar = wnd:FindChild("ShieldBar"):FindChild("ProgressBar"),
 			cast = wnd:FindChild("CastBar"),
