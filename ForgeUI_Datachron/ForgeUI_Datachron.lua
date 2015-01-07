@@ -704,5 +704,13 @@ function ForgeUI_Datachron:OnMovableMove( wndHandler, wndControl, nOldLeft, nOld
 	g_wndDatachron:SetAnchorOffsets(self.wndMovables:FindChild("Movable_Datachron"):GetAnchorOffsets())
 end
 
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_Datachron Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_Datachron:OnCloseButton( wndHandler, wndControl, eMouseButton )
+	self:OnMinimizeDatachron()
+end
+
 local ForgeUI_DatachronInst = ForgeUI_Datachron:new()
 ForgeUI_DatachronInst:Init()
