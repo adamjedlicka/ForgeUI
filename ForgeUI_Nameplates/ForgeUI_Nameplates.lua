@@ -45,13 +45,13 @@ function ForgeUI_Nameplates:new(o)
 		bOnlyImportantNPCs = true,
 		crMooBar = "FF7E00FF",
 		crCastBar = "FFFEB308",
-		crShieldBar = "FF0699F3",
+		crShieldBar = "FFFFFFFF",
 		crBarBgColor = "FF101010",
 		bUseOcclusion = true,
 		nHpBarHeight = 7,
 		nShieldBarHeight = 4,
 		bShowShieldBars = true,
-		bShowRewardIcons = true,
+		bShowQuestIcons = true,
 		tPlayer = {
 			bShow = false,
 			bShowBars = false,
@@ -286,13 +286,18 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 	local nNameWidth = Apollo.GetTextWidth("Nameplates", tNameplate.unitOwner:GetName() .. " ")
 	name:SetAnchorOffsets(- (nNameWidth / 2), 0, (nNameWidth / 2), -15)
 	
-	if self.tSettings.bShowRewardIcons then
+	if self.tSettings.bShowQuestIcons then
 		local questIcon = tNameplate.wnd.quest
+		
 		local tRewardInfo = tNameplate.unitOwner:GetRewardInfo()
+		if tRewardInfo == nil then return end
+		
 		local bIsReward = false
 		
-		if tRewardInfo ~= nil and #tRewardInfo > 0 then
-			bIsReward = true
+		for _, reward in pairs(tRewardInfo) do
+			if reward.strType == "Quest" then
+				bIsReward = true
+			end
 		end
 		
 		if questIcon:IsShown() ~= bIsReward then

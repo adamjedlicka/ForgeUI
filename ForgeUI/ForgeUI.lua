@@ -97,7 +97,7 @@ function ForgeUI:OnDocLoaded()
 	wndItemContainer = self.wndMain:FindChild("ForgeUI_ContainerHolder")
 	wndItemContainer2 = self.wndMain:FindChild("ForgeUI_ContainerHolder2")
 
-	Apollo.RegisterSlashCommand("forgeui", "OnForgeUIOn", self)
+	Apollo.RegisterSlashCommand("forgeui", "OnForgeUIcmd", self)
 	
 	local tmpWnd = ForgeUI.AddItemButton(self, "Home", "ForgeUI_Home")
 	wndActiveItem = tmpWnd
@@ -106,6 +106,8 @@ function ForgeUI:OnDocLoaded()
 	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General")
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_Core")
+	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
 	
 	bCanRegisterAddons = true
 	
@@ -310,10 +312,12 @@ function ForgeUI:OnSave(eType)
 	tSett = ForgeUI.CopyTable(tSett, tSettings)
 	
 	for addonName, addon in pairs(tAddons) do -- addon settings
-		if addon.ForgeAPI_BeforeSave ~= nil then
-			addon:ForgeAPI_BeforeSave() -- Forge API BeforeSave
+		if addon.bReset ~= true then
+			if addon.ForgeAPI_BeforeSave ~= nil then
+				addon:ForgeAPI_BeforeSave() -- Forge API BeforeSave
+			end
+			tAdd[addonName] = ForgeUI.CopyTable(tAdd[addonName], addon.tSettings)
 		end
-		tAdd[addonName] = ForgeUI.CopyTable(tAdd[addonName], addon.tSettings)
 	end
 	
 	for id, wnd in pairs(tSettings_windowsPositions) do -- registered windows
@@ -327,9 +331,9 @@ function ForgeUI:OnSave(eType)
 	end
 
 	return {
-		settings = tSett,
-		addons = tAdd,
 		windowsPositions = tSettings_windowsPositions,
+		addons = tAdd,
+		settings = tSett
 	}
 end
 
@@ -347,6 +351,26 @@ end
 -----------------------------------------------------------------------------------------------
 -- ForgeUI Functions
 -----------------------------------------------------------------------------------------------
+function ForgeUI:OnForgeUIcmd(cmd, arg)
+	if cmd ~= "forgeui" then return end
+	
+	if arg == "" then
+		self:OnForgeUIOn()
+	elseif arg == "reset" then
+		self:ResetDefaults()
+	else
+		tArgs = {}
+		for sArg in arg:gmatch("%w+") do table.insert(tArgs, sArg) end
+		
+		if tArgs[1] == "reset" then
+			if tAddons["ForgeUI_" .. tArgs[2]] ~= nil then
+				tAddons["ForgeUI_" .. tArgs[2]].bReset = true
+			end
+			RequestReloadUI()
+		end
+	end
+end
+
 function ForgeUI:OnConfigure()
 	self:OnForgeUIOn()
 end
@@ -360,7 +384,16 @@ function ForgeUI:OnFOrgeUIOff( wndHandler, wndControl, eMouseButton )
 	self.wndMain:Close()
 end
 
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_Movables Functions
+---------------------------------------------------------------------------------------------------
 function ForgeUI:OnUnlockElements()
+	self.wndMain:Show(false, true)
+	self.wndMain:FindChild("ForgeUI_General_UnlockButton"):SetText("Lock elements")
+
+	self.wndMovables:Show(true, true)
+	self:FillGrid(self.wndMovables:FindChild("Grid"))
+
 	for name, addon in pairs(tAddons) do
 		if addon.wndMovables ~= nil then
 			addon.wndMovables:Show(true, true)
@@ -373,6 +406,12 @@ function ForgeUI:OnUnlockElements()
 end
 
 function ForgeUI:OnLockElements()
+	self.wndMain:Show(true, true)
+	self.wndMain:FindChild("ForgeUI_General_UnlockButton"):SetText("Unlock elements")
+
+	self.wndMovables:Show(false, true)
+	self.wndMovables:FindChild("Grid"):DestroyAllPixies()
+
 	for _, addon in pairs(tAddons) do
 		if addon.wndMovables ~= nil then
 			addon.wndMovables:Show(false, true)
@@ -382,6 +421,41 @@ function ForgeUI:OnLockElements()
 			addon:ForgeAPI_OnLockElements() -- Forge API OnLockElements
 		end
 	end
+end
+
+function ForgeUI:ForgeUI_Movables_GridCheckbox( wndHandler, wndControl, eMouseButton )
+	self.wndMovables:FindChild("Grid"):Show(wndControl:IsChecked(), true)
+end
+
+function ForgeUI:FillGrid(wnd)
+	local nDiameter = 5
+
+	local nHeight = wnd:GetHeight()
+	local nWidth = wnd:GetWidth()
+	
+	for i = 0, nHeight, nDiameter do
+		wnd:AddPixie({
+			strSprite = "BlackFill",
+			loc = {
+		    	fPoints = {0,0,1,0},
+	    		nOffsets = {0,i,0,i + 1}
+			 }
+		})
+	end
+	
+	for i = 0, nWidth, nDiameter do
+		wnd:AddPixie({
+			strSprite = "BlackFill",
+			loc = {
+		    	fPoints = {0,0,0,1},
+	    		nOffsets = {i,0,i + 1,0}
+			 }
+		})
+	end
+end
+
+function ForgeUI:OnMovablesClose( wndHandler, wndControl, eMouseButton )
+	self:OnLockElements()
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -414,13 +488,9 @@ end
 -- ForgeUI_General Functions
 ---------------------------------------------------------------------------------------------------
 function ForgeUI:OnUnlockButtonPressed( wndHandler, wndControl, eMouseButton )
-	if wndControl:GetData() == nil or wndControl:GetData().locked == true then
-		wndControl:SetData({locked = false})
-		wndControl:SetText("Lock elements")
+	if wndControl:GetText() == "Unlock elements" then
 		self:OnUnlockElements()
 	else
-		wndControl:SetData({locked = true})
-		wndControl:SetText("Unock elements")
 		self:OnLockElements()
 	end	
 end

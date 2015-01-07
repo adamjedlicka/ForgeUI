@@ -28,11 +28,14 @@ function ForgeUI_CastBars:new(o)
 	
 	-- optional
 	self.tSettings = {
-		smoothBars = true,
-		backgroundColor = "101010",
-		castBarColor = "272727",
-		mooBarColor = "BC00BB",
-		durationBarColor = "FFCC00"
+		bSmoothBars = true,
+		bCenterPlayerText = false,
+		bCenterTargetText = false,
+		crBorder = "FF000000",
+		crBackground = "FF101010",
+		crCastBar = "FF272727",
+		crMooBar = "FFBC00BB",
+		crDuration = "FFFFCC00"
 	}
 	
 	self.cast = nil
@@ -216,21 +219,53 @@ function ForgeUI_CastBars:OnDocLoaded()
 	ForgeUI.RegisterAddon(self)
 end
 
+function ForgeUI_CastBars:UpdateStyles()
+	self.wndPlayerCastBar:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
+	self.wndPlayerCastBar:FindChild("CastBar"):SetBarColor(self.tSettings.crCastBar)
+	self.wndPlayerCastBar:FindChild("TickBar"):SetBarColor(self.tSettings.crCastBar)
+	self.wndPlayerCastBar:FindChild("DurationBar"):SetBarColor(self.tSettings.crDuration)
+	
+	self.wndTargetCastBar:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
+	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor(self.tSettings.crCastBar)
+	self.wndTargetCastBar:FindChild("MoOBar"):SetBarColor(self.tSettings.crMooBar)
+	
+	if self.tSettings.bCenterTargetText then
+		self.wndTargetCastBar:FindChild("SpellName"):SetAnchorOffsets(10, 0, 0, 0)
+		self.wndTargetCastBar:FindChild("SpellName"):SetAnchorPoints(0, 0, 1, 1)
+		
+		self.wndTargetCastBar:FindChild("CastTime"):SetAnchorOffsets(0, 0, -10, 0)
+		self.wndTargetCastBar:FindChild("CastTime"):SetAnchorPoints(0, 0, 1, 1)
+	else
+		self.wndTargetCastBar:FindChild("SpellName"):SetAnchorOffsets(10, -10, 0, 15)
+		self.wndTargetCastBar:FindChild("SpellName"):SetAnchorPoints(0, 0, 1, 0)
+		
+		self.wndTargetCastBar:FindChild("CastTime"):SetAnchorOffsets(0, -10, -10, 15)
+		self.wndTargetCastBar:FindChild("CastTime"):SetAnchorPoints(0, 0, 1, 0)
+	end
+	
+	if self.tSettings.bCenterPlayerText then
+		self.wndPlayerCastBar:FindChild("SpellName"):SetAnchorOffsets(10, 0, 0, 0)
+		self.wndPlayerCastBar:FindChild("SpellName"):SetAnchorPoints(0, 0, 1, 1)
+		
+		self.wndPlayerCastBar:FindChild("CastTime"):SetAnchorOffsets(0, 0, -10, 0)
+		self.wndPlayerCastBar:FindChild("CastTime"):SetAnchorPoints(0, 0, 1, 1)
+	else
+		self.wndPlayerCastBar:FindChild("SpellName"):SetAnchorOffsets(10, -10, 0, 15)
+		self.wndPlayerCastBar:FindChild("SpellName"):SetAnchorPoints(0, 0, 1, 0)
+		
+		self.wndPlayerCastBar:FindChild("CastTime"):SetAnchorOffsets(0, -10, -10, 15)
+		self.wndPlayerCastBar:FindChild("CastTime"):SetAnchorPoints(0, 0, 1, 0)
+	end
+end
+
 function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerCastBar, "ForgeUI_CastBars_PlayerCastBar", self.wndMovables:FindChild("Movable_PlayerCastBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndTargetCastBar, "ForgeUI_CastBars_TargetCastBar", self.wndMovables:FindChild("Movable_TargetCastBar"))
-
-	self.wndPlayerCastBar:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
-	self.wndPlayerCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
-	self.wndPlayerCastBar:FindChild("TickBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
-	self.wndPlayerCastBar:FindChild("DurationBar"):SetBarColor("FF" .. self.tSettings.durationBarColor)
 	
-	self.wndTargetCastBar:FindChild("Background"):SetBGColor("FF" .. self.tSettings.backgroundColor)
-	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor("FF" .. self.tSettings.castBarColor)
-	self.wndTargetCastBar:FindChild("MoOBar"):SetBarColor("FF" .. self.tSettings.mooBarColor)
+	self:UpdateStyles()
 	
-	self.wndContainers["Container"]:FindChild("SmoothBars_Button"):SetCheck(self.tSettings.smoothBars)
-	if self.tSettings.smoothBars == true then
+	self.wndContainers["Container"]:FindChild("SmoothBars_Button"):SetCheck(self.tSettings.bSmoothBars)
+	if self.tSettings.bSmoothBars == true then
 		Apollo.RegisterEventHandler("NextFrame", 	"OnNextFrame", self)
 	else
 		Apollo.RegisterEventHandler("VarChange_FrameCount", 	"OnNextFrame", self)
@@ -241,7 +276,7 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 end
 
 function ForgeUI_CastBars:ForgeAPI_BeforeSave()
-	self.tSettings.smoothBars = self.wndContainers["Container"]:FindChild("SmoothBars_Button"):IsChecked()
+	self.tSettings.bSmoothBars = self.wndContainers["Container"]:FindChild("SmoothBars_Button"):IsChecked()
 end
 
 ---------------------------------------------------------------------------------------------------
