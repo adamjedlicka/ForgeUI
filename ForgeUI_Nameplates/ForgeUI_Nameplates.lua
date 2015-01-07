@@ -57,6 +57,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBars = false,
 			bShowCast = false,
 			bShowClassColors = true,
+			bShowGuild = false,
 			nHideBarsOver = 100,
 			crName = "FFFFFFFF",
 			crBar = "FFFFFFFF"
@@ -66,6 +67,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBars = true,
 			bShowCast = true,
 			bShowMarker = true,
+			bShowGuild = false,
 			crMarker = "FFFFFFFF"
 		},
 		tHostile = {
@@ -74,6 +76,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = true,
+			bShowGuild = false,
 			crName = "FFD9544D",
 			crBar = "FFE50000"
 		},
@@ -83,6 +86,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = false,
+			bShowGuild = false,
 			crName = "FFFFF569",
 			crBar = "FFF3D829"
 		},
@@ -92,6 +96,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = false,
 			nHideBarsOver = 100,
 			bShowCast = false,
+			bShowGuild = false,
 			crName = "FF76CD26",
 			crBar = "FF15B01A"
 		},
@@ -109,6 +114,7 @@ function ForgeUI_Nameplates:new(o)
 			nHideBarsOver = 100,
 			bShowCast = false,
 			bShowClassColors = true,
+			bShowGuild = true,
 			crName = "FFFFFFFF",
 			crBar = "FF15B01A"
 		},
@@ -119,6 +125,7 @@ function ForgeUI_Nameplates:new(o)
 			nHideBarsOver = 100,
 			bShowCast = false,
 			bShowClassColors = true,
+			bShowGuild = true,
 			crName = "FF43C8F3",
 			crBar = "FF15B01A"
 		},
@@ -129,6 +136,7 @@ function ForgeUI_Nameplates:new(o)
 			nHideBarsOver = 100,
 			bShowCast = true,
 			bShowClassColors = true,
+			bShowGuild = true,
 			crName = "FFD9544D",
 			crBar = "E50000"
 		},
@@ -257,6 +265,7 @@ function ForgeUI_Nameplates:OnTargetUnitChanged(unit)
 	
 	if GameLib.GetTargetUnit() == unit then
 		tNameplate.bIsTarget = true
+		self:UpdateNameplate(tNameplate)
 	end
 end
 
@@ -266,14 +275,21 @@ end
 function ForgeUI_Nameplates:UpdateNameplates()
 	for idx, tNameplate in pairs(self.tNameplates) do
 		if self:UpdateNameplateVisibility(tNameplate) then
-			tNameplate.unitType = self:GetUnitType(tNameplate.unitOwner)
-			self:UpdateName(tNameplate)
-			self:UpdateHealth(tNameplate)
-			self:UpdateCast(tNameplate)
-			self:UpdateMarker(tNameplate)
-			self:UpdateArmor(tNameplate)
+			self:UpdateNameplate(tNameplate)
 		end
 	end
+end
+
+function ForgeUI_Nameplates:UpdateNameplate(tNameplate)
+	tNameplate.unitType = self:GetUnitType(tNameplate.unitOwner)
+	
+	self:UpdateName(tNameplate)
+	self:UpdateGuild(tNameplate)
+	self:UpdateHealth(tNameplate)
+	self:UpdateShield(tNameplate)
+	self:UpdateCast(tNameplate)
+	self:UpdateMarker(tNameplate)
+	self:UpdateArmor(tNameplate)
 end
 
 -- update name
@@ -284,7 +300,8 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 	name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
 	
 	local nNameWidth = Apollo.GetTextWidth("Nameplates", tNameplate.unitOwner:GetName() .. " ")
-	name:SetAnchorOffsets(- (nNameWidth / 2), 0, (nNameWidth / 2), -15)
+	local nLeft, nTop, nRight, nBottom = name:GetAnchorOffsets()
+	name:SetAnchorOffsets(- (nNameWidth / 2), nTop, (nNameWidth / 2), nBottom)
 	
 	if self.tSettings.bShowQuestIcons then
 		local questIcon = tNameplate.wnd.quest
@@ -302,7 +319,40 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 		
 		if questIcon:IsShown() ~= bIsReward then
 			questIcon:Show(bIsReward, true)
+			self:UpdateStyle(tNameplate)
 		end
+	end
+end
+
+-- update guild
+function ForgeUI_Nameplates:UpdateGuild(tNameplate)
+	local unitOwner = tNameplate.unitOwner
+	local guild = tNameplate.wnd.guild
+	local bShow = false
+
+	local strGuildName = unitOwner:GetAffiliationName()
+	
+	if strGuildName ~= nil and strGuildName ~= "" then
+		if self.tSettings["t" .. tNameplate.unitType].bShowGuild == true then
+			strGuildName = String_GetWeaselString(Apollo.GetString("Nameplates_GuildDisplay"), strGuildName)
+		
+			local nNameWidth = Apollo.GetTextWidth("Nameplates", strGuildName .. " ")
+			local nLeft, nTop, nRight, nBottom = guild:GetAnchorOffsets()
+			guild:SetAnchorOffsets(- (nNameWidth / 2), nTop, (nNameWidth / 2), nBottom)			
+			
+			guild:SetTextRaw(strGuildName)
+			guild:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
+			
+			bShow = true
+		end
+	else
+		guild:SetText("")
+		bShow = false
+	end
+	
+	if bShow ~= guild:IsShown() then
+		guild:Show(bShow, true)
+		self:UpdateStyle(tNameplate)
 	end
 end
 
@@ -313,7 +363,10 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 		return
 	end
 
+	local bShow = false
+	
 	local unitOwner = tNameplate.unitOwner
+	local hp = tNameplate.wnd.hp
 	local progressBar = tNameplate.wnd.hpBar
 	
 	if self.tSettings["t" ..tNameplate.unitType].bShowBars
@@ -336,13 +389,16 @@ function ForgeUI_Nameplates:UpdateHealth(tNameplate)
 					progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
 				end
 			end
-			tNameplate.wnd.bar:Show(true, true)
+			bShow = true
 		end
 	else
-		tNameplate.wnd.bar:Show(false, true)
+		bShow = false
 	end
 	
-	if  self.tSettings.bShowShieldBars then self:UpdateShield(tNameplate) end
+	if bShow ~= hp:IsShown() then
+		hp:Show(bShow, true)
+		self:UpdateStyle(tNameplate)
+	end
 end
 
 -- update shieldbar
@@ -352,16 +408,19 @@ function ForgeUI_Nameplates:UpdateShield(tNameplate)
 	local progressBar = tNameplate.wnd.shieldBar
 	
 	local bShow = false
-	local nMax = unitOwner:GetShieldCapacityMax()
-	local nValue = unitOwner:GetShieldCapacity()
 	
-	if nValue ~= 0 then
-		progressBar:SetMax(nMax)
-		progressBar:SetProgress(nValue)
+	if self.tSettings.bShowShieldBars == true and self.tSettings["t" ..tNameplate.unitType].bShowBars == true then
+		local nMax = unitOwner:GetShieldCapacityMax()
+		local nValue = unitOwner:GetShieldCapacity()
 		
-		bShow = true
+		if nValue ~= 0 then
+			progressBar:SetMax(nMax)
+			progressBar:SetProgress(nValue)
+			
+			bShow = true
+		end
 	end
-	
+		
 	if bar:IsShown() ~= bShow then
 		bar:Show(bShow, true)
 		self:UpdateStyle(tNameplate)
@@ -468,6 +527,14 @@ function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 	else
 		wnd.bar:SetAnchorOffsets(nLeft, nTop, nRight, nTop + self.tSettings.nHpBarHeight)
 		wnd.hp:SetAnchorOffsets(0, 0, 0, self.tSettings.nHpBarHeight)
+	end
+	
+	if tNameplate.wnd.guild:IsShown() then
+		nLeft, nTop, nRight, nBottom = wnd.name:GetAnchorOffsets()
+		wnd.name:SetAnchorOffsets(nLeft, -15, nRight, -30)
+	else
+		nLeft, nTop, nRight, nBottom = wnd.name:GetAnchorOffsets()
+		wnd.name:SetAnchorOffsets(nLeft, 0, nRight, -15)
 	end
 end
 
@@ -587,6 +654,7 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 		wndNameplate 	= wnd,
 		wnd = {
 			name = wnd:FindChild("Name"),
+			guild = wnd:FindChild("Guild"),
 			bar = wnd:FindChild("Bar"),
 			hp = wnd:FindChild("HPBar"),
 			hpBar = wnd:FindChild("HPBar"):FindChild("ProgressBar"),
@@ -670,7 +738,7 @@ function ForgeUI_Nameplates:IsImportantNPC(unitOwner)
 end
 
 function ForgeUI_Nameplates:OnNameplateClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
-	if wndControl:GetName() == "Bar" or wndControl:GetName() == "Name" then
+	if wndControl:GetName() == "Bar" or wndControl:GetName() == "Name" or wndControl:GetName() == "Guild" then
 		GameLib.SetTargetUnit(wndControl:GetParent():GetUnit())
 	elseif wndControl:GetName() == "HPBar" or wndControl:GetName() == "ShieldBar" then
 		GameLib.SetTargetUnit(wndControl:GetParent():GetParent():GetUnit())
