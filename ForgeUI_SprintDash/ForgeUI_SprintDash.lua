@@ -20,7 +20,7 @@ function ForgeUI_SprintDash:new(o)
 	self.wndContainers = {}
 	
 	-- optional
-	self.tSettings = {
+    self.tSettings = {
 		sprintColor = "CCCCCC",
 		dashColor = "00AAFF",
 		dashColor2 = "0055AA"

@@ -22,6 +22,8 @@ local tDispositionId = {
 	[3] = "Unknown",
 }
 
+local _pairs		= pairs
+
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
@@ -32,7 +34,6 @@ function ForgeUI_Nameplates:new(o)
 
      -- mandatory 
 	self.api_version = 1
-	self.settings_version = 1
 	self.version = "0.0.1"
 	self.author = "WintyBadass"
 	self.strAddonName = "ForgeUI_Nameplates"
@@ -41,9 +42,9 @@ function ForgeUI_Nameplates:new(o)
 	self.wndContainers = {}
 	
 	-- optional
+	self.settings_version = 2
 	self.tSettings = {
 		nMaxRange = 75,
-		bOnlyImportantNPCs = true,
 		crMooBar = "FF7E00FF",
 		crCastBar = "FFFEB308",
 		crShieldBar = "FFFFFFFF",
@@ -97,8 +98,9 @@ function ForgeUI_Nameplates:new(o)
 		},
 		tFriendly = {
 			bShow = true,
+			bOnlyImportantNPCs = true,
 			bShowBars = false,
-			bShowBarsInCombat = false,
+			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = false,
 			bShowGuild = true,
@@ -107,18 +109,15 @@ function ForgeUI_Nameplates:new(o)
 		},
 		tUnknown = {
 			bShow = false,
-			bShowBars = false,
-			bShowCast = false,
-			crName = "FFFFFFFF",
-			crBar = "FFFFFFFF"
+			crName = "FFFFFFFF"
 		},
 		tFriendlyPlayer = {
 			bShow = true,
 			bShowBars = true,
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
-			bShowCast = false,
 			bUseClassColors = true,
+			bShowCast = true,
 			bShowGuild = false,
 			crName = "FFFFFFFF",
 			crBar = "FF15B01A"
@@ -128,8 +127,8 @@ function ForgeUI_Nameplates:new(o)
 			bShowBars = true,
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
-			bShowCast = false,
 			bUseClassColors = true,
+			bShowCast = true,
 			bShowGuild = false,
 			crName = "FF43C8F3",
 			crBar = "FF15B01A"
@@ -139,8 +138,8 @@ function ForgeUI_Nameplates:new(o)
 			bShowBars = true,
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
-			bShowCast = true,
 			bUseClassColors = true,
+			bShowCast = true,
 			bShowGuild = false,
 			crName = "FFD9544D",
 			crBar = "E50000"
@@ -148,6 +147,7 @@ function ForgeUI_Nameplates:new(o)
 		tFriendlyPet = {
 			bShow = false,
 			bShowBars = false,
+			bShowBarsInCombat = false,
 			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFFFFF",
@@ -155,7 +155,8 @@ function ForgeUI_Nameplates:new(o)
 		},
 		tPlayerPet = {
 			bShow = true,
-			bShowBars = false,
+			bShowBars = true,
+			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFFFFF",
@@ -164,6 +165,7 @@ function ForgeUI_Nameplates:new(o)
 		tHostilePet = {
 			bShow = false,
 			bShowBars = false,
+			bShowBarsInCombat = false,
 			nHideBarsOver = 100,
 			bShowCast = false,
 			crName = "FFFFFFFF",
@@ -252,10 +254,6 @@ end
 
 function ForgeUI_Nameplates:OnUnitCreated(unit)
 	self.tUnitsInQueue[unit:GetId()] = unit
-	
-	if unit:GetName() == "Winty Badass' Weapon" then
-		Print(unit:GetType())
-	end
 end
 
 function ForgeUI_Nameplates:OnUnitDestroyed(unit)
@@ -268,7 +266,7 @@ function ForgeUI_Nameplates:OnUnitDestroyed(unit)
 end
 
 function ForgeUI_Nameplates:OnTargetUnitChanged(unit)
-	for _, tNameplate in pairs(self.tNameplates) do
+	for _, tNameplate in _pairs(self.tNameplates) do
 		tNameplate.bIsTarget = false
 	end
 	
@@ -287,7 +285,7 @@ end
 -- ForgeUI_Nameplates Nameplate functions
 -----------------------------------------------------------------------------------------------
 function ForgeUI_Nameplates:UpdateNameplates()
-	for idx, tNameplate in pairs(self.tNameplates) do
+	for idx, tNameplate in _pairs(self.tNameplates) do
 		if self:UpdateNameplateVisibility(tNameplate) then
 			self:UpdateNameplate(tNameplate)
 		end
@@ -301,7 +299,6 @@ function ForgeUI_Nameplates:UpdateNameplate(tNameplate)
 	self:UpdateBars(tNameplate)
 	self:UpdateGuild(tNameplate)
 	self:UpdateCast(tNameplate)
-	self:UpdateMarker(tNameplate)
 end
 
 -- update name
@@ -334,7 +331,7 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 		
 		local bIsReward = false
 		
-		for _, reward in pairs(tRewardInfo) do
+		for _, reward in _pairs(tRewardInfo) do
 			if reward.strType == "Quest" then
 				bIsReward = true
 			end
@@ -386,25 +383,30 @@ function ForgeUI_Nameplates:UpdateBars(tNameplate)
 	
 	local bShow = false
 
-	if self.tSettings["t" ..tNameplate.unitType].bShowBars then
-		bShow = true
+	if self.tSettings["t" ..tNameplate.unitType].bShowBars ~= nil then
+		bShow = self.tSettings["t" ..tNameplate.unitType].bShowBars
 	
-		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
-			bShow = false
+		if unitOwner:IsInCombat() then
+			bShow = self.tSettings["t" ..tNameplate.unitType].bShowBarsInCombat
 		end
-	end
-	
-	if unitOwner:IsInCombat() then
-		bShow = self.tSettings["t" ..tNameplate.unitType].bShowBarsInCombat
-	end
-	
-	if tNameplate.bIsTarget then
-		bShow = self.tSettings.tTarget.bShowBars
-	end
-	
-	if bShow ~= bar:IsShown() then
-		bar:Show(bShow, true)
-		self:UpdateStyle(tNameplate)
+		
+		if tNameplate.bIsTarget then
+			bShow = self.tSettings.tTarget.bShowBars
+		end
+		
+		if bShow ~= bar:IsShown() then
+			bar:Show(bShow, true)
+			self:UpdateStyle(tNameplate)
+		end
+		
+		local hpMax = unitOwner:GetMaxHealth()
+		if hpMax ~= nil or hpMax == 0 and unitOwner:IsDead() then 
+			local hp = unitOwner:GetHealth()
+		
+			if ((hp / hpMax) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
+				bShow = false
+			end
+		end
 	end
 	
 	if bShow then
@@ -412,6 +414,7 @@ function ForgeUI_Nameplates:UpdateBars(tNameplate)
 		self:UpdateArmor(tNameplate)
 		self:UpdateAbsorb(tNameplate)
 		self:UpdateShield(tNameplate)
+		self:UpdateMarker(tNameplate)
 	end
 end
 
@@ -579,7 +582,7 @@ function ForgeUI_Nameplates:UpdateNameplateVisibility(tNameplate)
 	local bVisible = tNameplate.bOnScreen
 	if bVisible then bVisible = self.tSettings["t" .. tNameplate.unitType].bShow end
 	if bVisible then bVisible = self:IsNameplateInRange(tNameplate) end
-	if bVisible and self.tSettings.bOnlyImportantNPCs and tNameplate.unitType == "Friendly" then bVisible = tNameplate.bIsImportant end
+	if bVisible and self.tSettings.tFriendly.bOnlyImportantNPCs and tNameplate.unitType == "Friendly" then bVisible = tNameplate.bIsImportant end
 	if bVisible and self.tSettings.bUseOcclusion then bVisible = not tNameplate.bOccluded end
 	if bVisible then bVisible = not unitOwner:IsDead() end
 	
@@ -649,7 +652,6 @@ function ForgeUI_Nameplates:IsNameplateInRange(tNameplate)
 
 	bInRange = nDistance < (self.tSettings.nMaxRange * self.tSettings.nMaxRange) -- squaring for quick maths
 	return bInRange
-	
 end
 
 -----------------------------------------------------------------------------------------------
@@ -701,7 +703,7 @@ end
 -- ForgeUI_Nameplates Unit functions
 -----------------------------------------------------------------------------------------------
 function ForgeUI_Nameplates:AddNewUnits()
-	for idx, unit in pairs(self.tUnitsInQueue) do
+	for idx, unit in _pairs(self.tUnitsInQueue) do
 		if unit == nil 
 			or not unit:IsValid() 
 			or self.tUnits[idx] ~= nil
@@ -760,6 +762,7 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 	if self.tSettings["t" .. tNameplate.unitType].bShow then
 		tNameplate.wnd.shield:Show(self.tSettings.bShowShieldBar, true)
 		
+		self:UpdateNameplate(tNameplate)
 		self:UpdateStyle(tNameplate)
 		
 		self.tNameplates[unitNew:GetId()] = tNameplate

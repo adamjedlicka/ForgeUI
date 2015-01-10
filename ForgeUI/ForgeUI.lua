@@ -141,7 +141,18 @@ function ForgeUI.RegisterAddon(tAddon)
 			tAddon:ForgeAPI_AfterRegistration() -- Forge API AfterRegistration
 		end
 		
-		tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+		if tSettings_addons[tAddon.strAddonName] ~= nil then
+			if tAddon.settings_version ~= nil then
+				if tAddon.settings_version == tSettings_addons[tAddon.strAddonName].settings_version then
+					tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+				end
+				tAddon.tSettings.settings_version = nil
+			else
+				if tSettings_addons[tAddon.strAddonName].settings_version == nil then
+					tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+				end
+			end
+		end
 		
 		if tAddon.ForgeAPI_AfterRestore ~= nil then
 			tAddon:ForgeAPI_AfterRestore() -- Forge API AfterRestore
@@ -307,7 +318,7 @@ function ForgeUI:OnSave(eType)
 	end
 	
 	local tSett = {}
-	local tAdd = {}
+	local tAdd = tSettings_addons
 
 	tSett = ForgeUI.CopyTable(tSett, tSettings)
 	
@@ -316,6 +327,12 @@ function ForgeUI:OnSave(eType)
 			if addon.ForgeAPI_BeforeSave ~= nil then
 				addon:ForgeAPI_BeforeSave() -- Forge API BeforeSave
 			end
+			tAdd[addonName] = {}
+			
+			if addon.settings_version ~= nil then
+				tAdd[addonName].settings_version = addon.settings_version
+			end
+			
 			tAdd[addonName] = ForgeUI.CopyTable(tAdd[addonName], addon.tSettings)
 		end
 	end
@@ -542,7 +559,7 @@ end
 -- Libraries
 ---------------------------------------------------------------------------------------------------
 function ForgeUI.ReturnTestStr()
-	return "OK"
+	return "ForgeUI"
 end
 
 function ForgeUI.CopyTable(tNew, tOld)
