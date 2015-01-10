@@ -32,6 +32,7 @@ function ForgeUI_Nameplates:new(o)
 
      -- mandatory 
 	self.api_version = 1
+	self.settings_version = 1
 	self.version = "0.0.1"
 	self.author = "WintyBadass"
 	self.strAddonName = "ForgeUI_Nameplates"
@@ -49,28 +50,30 @@ function ForgeUI_Nameplates:new(o)
 		crBarBgColor = "FF101010",
 		crAbsorbBar = "FFFFC600",
 		bShowAbsorbBar = true,
+		bShowShieldBar = true,
 		bUseOcclusion = true,
+		bShowTitles = false,
+		nBarWidth = 100,
 		nHpBarHeight = 7,
 		nShieldBarHeight = 4,
-		bShowShieldBars = true,
 		bShowQuestIcons = true,
-		tPlayer = {
-			bShow = false,
-			bShowBars = false,
-			bShowCast = false,
-			bShowClassColors = true,
-			bShowGuild = false,
-			nHideBarsOver = 100,
-			crName = "FFFFFFFF",
-			crBar = "FFFFFFFF"
-		},
 		tTarget = {
 			bShow = true,
 			bShowBars = true,
 			bShowCast = true,
 			bShowMarker = true,
-			bShowGuild = false,
 			crMarker = "FFFFFFFF"
+		},
+		tPlayer = {
+			bShow = false,
+			bShowBars = false,
+			bShowBarsInCombat = false,
+			nHideBarsOver = 100,
+			bUseClassColors = false,
+			bShowCast = false,
+			bShowGuild = false,
+			crName = "FFFFFFFF",
+			crBar = "FFFFFFFF"
 		},
 		tHostile = {
 			bShow = true,
@@ -98,7 +101,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = false,
 			nHideBarsOver = 100,
 			bShowCast = false,
-			bShowGuild = false,
+			bShowGuild = true,
 			crName = "FF76CD26",
 			crBar = "FF15B01A"
 		},
@@ -115,8 +118,8 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = false,
-			bShowClassColors = true,
-			bShowGuild = true,
+			bUseClassColors = true,
+			bShowGuild = false,
 			crName = "FFFFFFFF",
 			crBar = "FF15B01A"
 		},
@@ -126,8 +129,8 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = false,
-			bShowClassColors = true,
-			bShowGuild = true,
+			bUseClassColors = true,
+			bShowGuild = false,
 			crName = "FF43C8F3",
 			crBar = "FF15B01A"
 		},
@@ -137,8 +140,8 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bShowCast = true,
-			bShowClassColors = true,
-			bShowGuild = true,
+			bUseClassColors = true,
+			bShowGuild = false,
 			crName = "FFD9544D",
 			crBar = "E50000"
 		},
@@ -181,12 +184,17 @@ function ForgeUI_Nameplates:new(o)
 		tSimple = {
 			bShow = false,
 			crName = "FFFFFFFF",
+		},
+		tPickup  = { -- weapon for example
+			bShow = true,
+			crName = "FFFFFFFF",
 		}
 	}
 	
 	self.unitPlayer = nil
 	self.tUnits = {}
 	self.tNameplates = {}
+	self.tHiddenNameplates = {}
 	
 	self.tUnitsInQueue = {}
 
@@ -244,6 +252,10 @@ end
 
 function ForgeUI_Nameplates:OnUnitCreated(unit)
 	self.tUnitsInQueue[unit:GetId()] = unit
+	
+	if unit:GetName() == "Winty Badass' Weapon" then
+		Print(unit:GetType())
+	end
 end
 
 function ForgeUI_Nameplates:OnUnitDestroyed(unit)
@@ -286,25 +298,33 @@ function ForgeUI_Nameplates:UpdateNameplate(tNameplate)
 	tNameplate.unitType = self:GetUnitType(tNameplate.unitOwner)
 	
 	self:UpdateName(tNameplate)
+	self:UpdateBars(tNameplate)
 	self:UpdateGuild(tNameplate)
-	self:UpdateHealth(tNameplate)
-	self:UpdateShield(tNameplate)
-	self:UpdateAbsorb(tNameplate)
 	self:UpdateCast(tNameplate)
 	self:UpdateMarker(tNameplate)
-	self:UpdateArmor(tNameplate)
 end
 
 -- update name
 function ForgeUI_Nameplates:UpdateName(tNameplate)
+	local unitOwner = tNameplate.unitOwner
 	local name = tNameplate.wnd.name
-
-	name:SetText(tNameplate.unitOwner:GetName())
-	name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
 	
-	local nNameWidth = Apollo.GetTextWidth("Nameplates", tNameplate.unitOwner:GetName() .. " ")
-	local nLeft, nTop, nRight, nBottom = name:GetAnchorOffsets()
-	name:SetAnchorOffsets(- (nNameWidth / 2), nTop, (nNameWidth / 2), nBottom)
+	local newName = ""
+	if self.tSettings.bShowTitles then
+		newName = unitOwner:GetTitleOrName()
+	else
+		newName = unitOwner:GetName()
+	end
+	
+	if newName ~= name:GetText() then
+		name:SetText(newName)
+		
+		local nNameWidth = Apollo.GetTextWidth("Nameplates", newName .. " ")
+		local nLeft, nTop, nRight, nBottom = name:GetAnchorOffsets()
+		name:SetAnchorOffsets(- (nNameWidth / 2), nTop, (nNameWidth / 2), nBottom)
+	end
+	
+	name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
 	
 	if self.tSettings.bShowQuestIcons then
 		local questIcon = tNameplate.wnd.quest
@@ -359,43 +379,68 @@ function ForgeUI_Nameplates:UpdateGuild(tNameplate)
 	end
 end
 
+-- update bars
+function ForgeUI_Nameplates:UpdateBars(tNameplate)
+	local bar = tNameplate.wnd.bar
+	local unitOwner = tNameplate.unitOwner
+	
+	local bShow = false
+
+	if self.tSettings["t" ..tNameplate.unitType].bShowBars then
+		bShow = true
+	
+		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
+			bShow = false
+		end
+	end
+	
+	if unitOwner:IsInCombat() then
+		bShow = self.tSettings["t" ..tNameplate.unitType].bShowBarsInCombat
+	end
+	
+	if tNameplate.bIsTarget then
+		bShow = self.tSettings.tTarget.bShowBars
+	end
+	
+	if bShow ~= bar:IsShown() then
+		bar:Show(bShow, true)
+		self:UpdateStyle(tNameplate)
+	end
+	
+	if bShow then
+		self:UpdateHealth(tNameplate)
+		self:UpdateArmor(tNameplate)
+		self:UpdateAbsorb(tNameplate)
+		self:UpdateShield(tNameplate)
+	end
+end
+
 -- update healthbar
 function ForgeUI_Nameplates:UpdateHealth(tNameplate)
-	if self.tSettings["t" ..tNameplate.unitType].bShowBars == nil then 
-		tNameplate.wnd.bar:Show(false, true)	
-		return
-	end
-
-	local bShow = false
-	
 	local unitOwner = tNameplate.unitOwner
 	local hp = tNameplate.wnd.hp
 	local progressBar = tNameplate.wnd.hpBar
 	
-	if self.tSettings["t" ..tNameplate.unitType].bShowBars
-		or self.tSettings["t" ..tNameplate.unitType].bShowBarsInCombat and unitOwner:IsInCombat()
-		or self.tSettings.tTarget.bShowBars and tNameplate.bIsTarget then
+	local bShow = false
 	
-		progressBar:SetMax(unitOwner:GetMaxHealth())
+	local maxHp = unitOwner:GetMaxHealth()
+	
+	if maxHp ~= nil and maxHp > 0 then
+		progressBar:SetMax(maxHp)
 		progressBar:SetProgress(unitOwner:GetHealth())
 		
-		if ((unitOwner:GetHealth() / unitOwner:GetMaxHealth()) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
-			bShow = false
+		local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
+		if nTime > 0 then
+			progressBar:SetBarColor(self.tSettings.crMooBar)
 		else
-			local nTime = unitOwner:GetCCStateTimeRemaining(Unit.CodeEnumCCState.Vulnerability)
-			if nTime > 0 then
-				progressBar:SetBarColor(self.tSettings.crMooBar)
+			if unitOwner:GetType() == "Player" and self.tSettings["t" .. tNameplate.unitType].bUseClassColors then
+				progressBar:SetBarColor("FF" .. ForgeUI.GetSettings().classColors[tClassEnums[unitOwner:GetClassId()]])
 			else
-				if unitOwner:GetType() == "Player" and self.tSettings["t" .. tNameplate.unitType].bShowClassColors then
-					progressBar:SetBarColor("FF" .. ForgeUI.GetSettings().classColors[tClassEnums[unitOwner:GetClassId()]])
-				else
-					progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
-				end
+				progressBar:SetBarColor(self.tSettings["t" .. tNameplate.unitType].crBar)
 			end
-			bShow = true
 		end
-	else
-		bShow = false
+		
+		bShow = true
 	end
 	
 	if bShow ~= hp:IsShown() then
@@ -412,7 +457,7 @@ function ForgeUI_Nameplates:UpdateShield(tNameplate)
 	
 	local bShow = false
 	
-	if self.tSettings.bShowShieldBars == true and self.tSettings["t" ..tNameplate.unitType].bShowBars == true then
+	if self.tSettings.bShowShieldBar == true then
 		local nMax = unitOwner:GetShieldCapacityMax()
 		local nValue = unitOwner:GetShieldCapacity()
 		
@@ -440,7 +485,7 @@ function ForgeUI_Nameplates:UpdateAbsorb(tNameplate)
 	if self.tSettings.bShowAbsorbBar then
 		local nValue = unitOwner:GetAbsorptionValue()
 		
-		if nValue > 0 or not unitOwner:IsDead() then
+		if nValue ~= nil and nValue > 0 and not unitOwner:IsDead() then
 			local nMax = unitOwner:GetAbsorptionMax()
 		
 			absorbBar:SetMax(nMax)
@@ -459,7 +504,10 @@ end
 -- update castbar
 function ForgeUI_Nameplates:UpdateCast(tNameplate)
 	local unitOwner = tNameplate.unitOwner
+	local cast = tNameplate.wnd.cast
 	local progressBar = tNameplate.wnd.castBar
+	
+	local bShow = false
 	
 	if self.tSettings["t" ..tNameplate.unitType].bShowCast or self.tSettings.tTarget.bShowCast and tNameplate.bIsTarget then
 		if unitOwner:ShouldShowCastBar() then
@@ -471,12 +519,12 @@ function ForgeUI_Nameplates:UpdateCast(tNameplate)
 			progressBar:SetMax(fDuration)
 			progressBar:SetProgress(fDuration - fElapsed)
 			
-			tNameplate.wnd.cast:Show(true, true)
-		else
-			tNameplate.wnd.cast:Show(false, true)
+			bShow = true
 		end
-	else
-		tNameplate.wnd.cast:Show(false, true)
+	end
+	
+	if bShow ~= cast:IsShown() then
+		cast:Show(bShow, true)
 	end
 end
 
@@ -491,17 +539,20 @@ function ForgeUI_Nameplates:UpdateMarker(tNameplate)
 	end
 end
 
+-- update armor
 function ForgeUI_Nameplates:UpdateArmor(tNameplate)
 	local unitOwner = tNameplate.unitOwner
 	local ia = tNameplate.wnd.ia
 	local iaText = tNameplate.wnd.iaText
 	
+	local bShow = false
+	
 	nValue = unitOwner:GetInterruptArmorValue()
 	nMax = unitOwner:GetInterruptArmorMax()
-	if nMax == 0 or nValue == nil or unitOwner:IsDead() or tNameplate.wnd.hp:IsShown() == false then
-		ia:Show(false, true)
+	if nMax == 0 or nValue == nil or unitOwner:IsDead() then
+		
 	else
-		ia:Show(true, true)
+		bShow = true
 		if nMax == -1 then
 			ia:SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
 			iaText:SetText("")
@@ -509,6 +560,10 @@ function ForgeUI_Nameplates:UpdateArmor(tNameplate)
 			ia:SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
 			iaText:SetText(nValue)
 		end
+	end
+	
+	if bShow ~= ia:IsShown() then
+		ia:Show(bShow, true)
 	end
 end
 
@@ -538,6 +593,7 @@ function ForgeUI_Nameplates:UpdateNameplateVisibility(tNameplate)
 	return bVisible
 end
 
+-- update style
 function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 	local wnd = tNameplate.wnd
 	
@@ -549,8 +605,10 @@ function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 	wnd.cast:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
 	wnd.marker:SetBGColor(self.tSettings.tTarget.crMarker)
 	
+	tNameplate.wndNameplate:SetAnchorOffsets(-(self.tSettings.nBarWidth /2), -30, (self.tSettings.nBarWidth / 2), 0)
+	
 	local nLeft, nTop, nRight, nBottom = wnd.bar:GetAnchorOffsets()
-	if tNameplate.wnd.shield:IsShown() then
+	if wnd.shield:IsShown() then
 		wnd.bar:SetAnchorOffsets(nLeft, nTop, nRight, nTop + self.tSettings.nHpBarHeight + self.tSettings.nShieldBarHeight - 1)
 		wnd.hp:SetAnchorOffsets(0, 0, 0, self.tSettings.nHpBarHeight)
 		wnd.shield:SetAnchorOffsets(0, - self.tSettings.nShieldBarHeight, 0, 0)
@@ -559,7 +617,7 @@ function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 		wnd.hp:SetAnchorOffsets(0, 0, 0, self.tSettings.nHpBarHeight)
 	end
 	
-	if tNameplate.wnd.guild:IsShown() then
+	if wnd.guild:IsShown() then
 		nLeft, nTop, nRight, nBottom = wnd.name:GetAnchorOffsets()
 		wnd.name:SetAnchorOffsets(nLeft, -15, nRight, -30)
 	else
@@ -589,13 +647,9 @@ function ForgeUI_Nameplates:IsNameplateInRange(tNameplate)
 
 	local nDistance = (nDeltaX * nDeltaX) + (nDeltaY * nDeltaY) + (nDeltaZ * nDeltaZ)
 
-	if tNameplate.bIsTarget then
-		bInRange = nDistance < 40000
-		return bInRange
-	else
-		bInRange = nDistance < (self.tSettings.nMaxRange * self.tSettings.nMaxRange) -- squaring for quick maths
-		return bInRange
-	end
+	bInRange = nDistance < (self.tSettings.nMaxRange * self.tSettings.nMaxRange) -- squaring for quick maths
+	return bInRange
+	
 end
 
 -----------------------------------------------------------------------------------------------
@@ -634,6 +688,8 @@ function ForgeUI_Nameplates:GetUnitType(unit)
 		end
 	elseif unit:GetType() == "Mount" then
 		return "Mount"
+	elseif unit:GetType() == "Pickup" then
+		return "Pickup"
 	elseif unit:GetHealth() == nil and not unit:IsDead() then
 		return "Simple"
 	else
@@ -702,12 +758,7 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 	}
 	
 	if self.tSettings["t" .. tNameplate.unitType].bShow then
-		--if tNameplate.unitType == "Friendly" and not self:IsImportantNPC(unitNew) and self.tSettings.bOnlyImportantNPCs then
-		--	wnd:Destroy()
-		--	return
-		--end
-		
-		tNameplate.wnd.shield:Show(self.tSettings.bShowShieldBars, true)
+		tNameplate.wnd.shield:Show(self.tSettings.bShowShieldBar, true)
 		
 		self:UpdateStyle(tNameplate)
 		
@@ -715,7 +766,7 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 		
 		return tNameplate
 	else
-		wnd:Destroy()
+		self.tHiddenNameplates[unitNew:GetId()] = tNameplate
 		return
 	end
 end
@@ -759,11 +810,6 @@ function ForgeUI_Nameplates:IsImportantNPC(unitOwner)
 	
 	--Trainers
 	if tActivation.TradeskillTrainer then
-		return true
-	end
-	
-	-- Magic!
-	if tActivation.Spell then
 		return true
 	end
 end
