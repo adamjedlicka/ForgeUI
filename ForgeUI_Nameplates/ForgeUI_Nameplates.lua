@@ -48,10 +48,9 @@ function ForgeUI_Nameplates:new(o)
 		crMooBar = "FF7E00FF",
 		crCastBar = "FFFEB308",
 		crShieldBar = "FFFFFFFF",
-		crBarBgColor = "FF101010",
+		crBgBar = "FF101010",
 		crAbsorbBar = "FFFFC600",
 		bShowAbsorbBar = true,
-		bShowShieldBar = true,
 		bUseOcclusion = true,
 		bShowTitles = false,
 		nBarWidth = 100,
@@ -74,7 +73,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowCast = false,
 			bShowGuild = false,
 			crName = "FFFFFFFF",
-			crBar = "FFFFFFFF"
+			crBar = "FF15B01A"
 		},
 		tHostile = {
 			bShow = true,
@@ -240,6 +239,20 @@ end
 
 function ForgeUI_Nameplates:ForgeAPI_AfterRegistration()
 	Apollo.RegisterEventHandler("VarChange_FrameCount", "OnFrame", self)
+	
+	local wndItemButton = ForgeUI.AddItemButton(self, "Nameplates")
+	ForgeUI.AddItemListToButton(self, wndItemButton, {
+		{ strDisplayName = "General", strContainer = "Container_General" },
+		{ strDisplayName = "Target", strContainer = "Container_Target" },
+		{ strDisplayName = "Player", strContainer = "Container_Player" },
+		{ strDisplayName = "Friendly player", strContainer = "Container_FriendlyPlayer" },
+		{ strDisplayName = "Party player", strContainer = "Container_PartyPlayer" },
+		{ strDisplayName = "Hostile player", strContainer = "Container_HostilePlayer" },
+		{ strDisplayName = "Friendly NPC", strContainer = "Container_Friendly" },
+		{ strDisplayName = "Neutral NPC", strContainer = "Container_Neutral" },
+		{ strDisplayName = "Hostile NPC", strContainer = "Container_Hostile" },
+		{ strDisplayName = "Player pet", strContainer = "Container_PlayerPet" }
+	})
 end
 
 -----------------------------------------------------------------------------------------------
@@ -323,24 +336,22 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 	
 	name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
 	
+	local questIcon = tNameplate.wnd.quest
+	local bIsReward = false
 	if self.tSettings.bShowQuestIcons then
-		local questIcon = tNameplate.wnd.quest
-		
 		local tRewardInfo = tNameplate.unitOwner:GetRewardInfo()
 		if tRewardInfo == nil then return end
-		
-		local bIsReward = false
 		
 		for _, reward in _pairs(tRewardInfo) do
 			if reward.strType == "Quest" then
 				bIsReward = true
 			end
 		end
-		
-		if questIcon:IsShown() ~= bIsReward then
-			questIcon:Show(bIsReward, true)
-			self:UpdateStyle(tNameplate)
-		end
+	end
+	
+	if questIcon:IsShown() ~= bIsReward then
+		questIcon:Show(bIsReward, true)
+		self:UpdateStyle(tNameplate)
 	end
 end
 
@@ -394,19 +405,20 @@ function ForgeUI_Nameplates:UpdateBars(tNameplate)
 			bShow = self.tSettings.tTarget.bShowBars
 		end
 		
-		if bShow ~= bar:IsShown() then
-			bar:Show(bShow, true)
-			self:UpdateStyle(tNameplate)
-		end
-		
 		local hpMax = unitOwner:GetMaxHealth()
-		if hpMax ~= nil or hpMax == 0 and unitOwner:IsDead() then 
+		if hpMax ~= nil then	
+		
 			local hp = unitOwner:GetHealth()
 		
 			if ((hp / hpMax) * 100) > self.tSettings["t" .. tNameplate.unitType].nHideBarsOver then
 				bShow = false
 			end
 		end
+	end
+	
+	if bShow ~= bar:IsShown() then
+		bar:Show(bShow, true)
+		self:UpdateStyle(tNameplate)
 	end
 	
 	if bShow then
@@ -460,7 +472,7 @@ function ForgeUI_Nameplates:UpdateShield(tNameplate)
 	
 	local bShow = false
 	
-	if self.tSettings.bShowShieldBar == true then
+	if self.tSettings.nShieldBarHeight > 0 then
 		local nMax = unitOwner:GetShieldCapacityMax()
 		local nValue = unitOwner:GetShieldCapacity()
 		
@@ -597,15 +609,21 @@ function ForgeUI_Nameplates:UpdateNameplateVisibility(tNameplate)
 end
 
 -- update style
+function ForgeUI_Nameplates:UpdateStyles()
+	for _, tNameplate in pairs(self.tNameplates) do
+		self:UpdateStyle(tNameplate)
+	end
+end
+
 function ForgeUI_Nameplates:UpdateStyle(tNameplate)
 	local wnd = tNameplate.wnd
 	
-	wnd.hp:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
-	wnd.shield:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
+	wnd.hp:FindChild("Background"):SetBGColor(self.tSettings.crBgBar)
+	wnd.shield:FindChild("Background"):SetBGColor(self.tSettings.crBgBar)
 	wnd.shieldBar:SetBarColor(self.tSettings.crShieldBar)
 	wnd.absorbBar:SetBarColor(self.tSettings.crAbsorbBar)
 	wnd.castBar:SetBarColor(self.tSettings.crCastBar)
-	wnd.cast:FindChild("Background"):SetBGColor(self.tSettings.crBarBgColor)
+	wnd.cast:FindChild("Background"):SetBGColor(self.tSettings.crBgBar)
 	wnd.marker:SetBGColor(self.tSettings.tTarget.crMarker)
 	
 	tNameplate.wndNameplate:SetAnchorOffsets(-(self.tSettings.nBarWidth /2), -30, (self.tSettings.nBarWidth / 2), 0)
@@ -759,19 +777,17 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 		}
 	}
 	
-	if self.tSettings["t" .. tNameplate.unitType].bShow then
-		tNameplate.wnd.shield:Show(self.tSettings.bShowShieldBar, true)
-		
+	--if self.tSettings["t" .. tNameplate.unitType].bShow then
 		self:UpdateNameplate(tNameplate)
 		self:UpdateStyle(tNameplate)
 		
 		self.tNameplates[unitNew:GetId()] = tNameplate
 		
 		return tNameplate
-	else
-		self.tHiddenNameplates[unitNew:GetId()] = tNameplate
-		return
-	end
+	--else
+	--	self.tHiddenNameplates[unitNew:GetId()] = tNameplate
+	--	return
+	--end
 end
 
 function ForgeUI_Nameplates:IsImportantNPC(unitOwner)
@@ -822,6 +838,166 @@ function ForgeUI_Nameplates:OnNameplateClick( wndHandler, wndControl, eMouseButt
 		GameLib.SetTargetUnit(wndControl:GetParent():GetUnit())
 	elseif wndControl:GetName() == "HPBar" or wndControl:GetName() == "ShieldBar" then
 		GameLib.SetTargetUnit(wndControl:GetParent():GetParent():GetUnit())
+	end
+end
+
+---------------------------------------------------------------------------------------------------
+-- Container_General Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_Nameplates:ForgeAPI_LoadOptions()
+	self.wndContainers.Container_General:FindChild("MaxRange"):SetText(self.tSettings.nMaxRange )
+	self.wndContainers.Container_General:FindChild("BarWidth"):SetText(self.tSettings.nBarWidth )
+	self.wndContainers.Container_General:FindChild("HpBarHeight"):SetText(self.tSettings.nHpBarHeight )
+	self.wndContainers.Container_General:FindChild("ShieldBarHeight"):SetText(self.tSettings.nShieldBarHeight )
+
+	self.wndContainers.Container_General:FindChild("ShowAbsorbBar"):SetCheck(self.tSettings.bShowAbsorbBar )
+	self.wndContainers.Container_General:FindChild("UseOcclusion"):SetCheck(self.tSettings.bUseOcclusion )
+	self.wndContainers.Container_General:FindChild("ShowTitles"):SetCheck(self.tSettings.bShowTitles )
+	self.wndContainers.Container_General:FindChild("ShowQuestIcons"):SetCheck(self.tSettings.bShowQuestIcons )
+
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container_General:FindChild("BgBarColor"), self.tSettings, "crBgBar", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container_General:FindChild("MooBarColor"), self.tSettings, "crMooBar", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container_General:FindChild("CastBarColor"), self.tSettings, "crCastBar", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container_General:FindChild("ShieldBarColor"), self.tSettings, "crShieldBar", true)
+	ForgeUI.ColorBoxChange(self, self.wndContainers.Container_General:FindChild("AbsorbBarColor"), self.tSettings, "crAbsorbBar", true)
+
+	self:LoadOptions_SpecificType()
+end
+
+function ForgeUI_Nameplates:OnOptionsChanged( wndHandler, wndControl )
+	local wndName = wndControl:GetName()
+
+	if wndName == "MaxRange" then
+		if wndControl:GetText() == "" or tonumber(wndControl:GetText()) == nil or tonumber(wndControl:GetText()) < 0  then return end
+		self.tSettings.nMaxRange = tonumber(wndControl:GetText())
+	elseif wndName == "BarWidth" then
+		if wndControl:GetText() == "" or tonumber(wndControl:GetText()) == nil or tonumber(wndControl:GetText()) < 0  then return end
+		self.tSettings.nBarWidth = tonumber(wndControl:GetText())
+	elseif wndName == "HpBarHeight" then
+		if wndControl:GetText() == "" or tonumber(wndControl:GetText()) == nil or tonumber(wndControl:GetText()) < 0  then return end
+		self.tSettings.nHpBarHeight = tonumber(wndControl:GetText())
+	elseif wndName == "ShieldBarHeight" then
+		if wndControl:GetText() == "" or tonumber(wndControl:GetText()) == nil or tonumber(wndControl:GetText()) < 0  then return end
+		self.tSettings.nShieldBarHeight = tonumber(wndControl:GetText())
+	end
+	
+	if wndName == "ShowAbsorbBar" then
+		self.tSettings.bShowAbsorbBar = wndControl:IsChecked()
+	elseif wndName == "UseOcclusion" then
+		self.tSettings.bUseOcclusion = wndControl:IsChecked()
+	elseif wndName == "ShowTitles" then
+		self.tSettings.bShowTitles = wndControl:IsChecked()
+	elseif wndName == "ShowQuestIcons" then
+		self.tSettings.bShowQuestIcons = wndControl:IsChecked()
+	end
+	
+	if wndName == "BgBarColor" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crBgBar")
+	elseif wndName == "MooBarColor" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crMooBar")
+	elseif wndName == "CastBarColor" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crCastBar")
+	elseif wndName == "ShieldBarColor" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crShieldBar")
+	elseif wndName == "AbsorbBarColor" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, "crAbsorbBar")
+	end
+	
+	self:UpdateStyles()
+end
+
+function ForgeUI_Nameplates:OnOptionsChanged_SpecificType( wndHandler, wndControl )
+	local sType = "t" .. string.sub(wndControl:GetParent():GetParent():GetName(), 11, string.len(wndControl:GetParent():GetParent():GetName()))
+	local sControlType = wndControl:GetParent():GetName()
+	
+	if sControlType == "CheckBox" then
+		self.tSettings[sType][wndControl:GetName()] = wndControl:IsChecked()
+	end
+	
+	if sControlType == "ColorBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings[sType], wndControl:GetName())
+	end
+	
+	if sControlType == "NumberBox" then
+		if wndControl:GetText() == "" or tonumber(wndControl:GetText()) == nil or tonumber(wndControl:GetText()) < 0  then return end
+		self.tSettings[sType][wndControl:GetName()] = tonumber(wndControl:GetText())
+	end
+	
+	self:UpdateStyles()
+end
+
+function ForgeUI_Nameplates:LoadOptions_SpecificType()
+	for _, wndContainer in pairs(self.wndContainers) do
+		if wndContainer:GetName() ~= "Container_General" then 
+			local sType = "t" .. string.sub(wndContainer:GetName(), 11, string.len(wndContainer:GetName()))
+			
+			-- check boxes
+			
+			local wnd = wndContainer:FindChild("bShow")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bShow)
+			end
+			
+			wnd = wndContainer:FindChild("bShowBars")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bShowBars)
+			end
+			
+			wnd = wndContainer:FindChild("bShowBarsInCombat")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bShowBarsInCombat)
+			end
+			
+			wnd = wndContainer:FindChild("bUseClassColors")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bUseClassColors)
+			end
+			
+			wnd = wndContainer:FindChild("bShowCast")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bShowCast)
+			end
+			
+			wnd = wndContainer:FindChild("bShowGuild")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bShowGuild)
+			end
+			
+			wnd = wndContainer:FindChild("bShowMarker")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bShowMarker)
+			end
+			
+			wnd = wndContainer:FindChild("bOnlyImportantNPCs")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bOnlyImportantNPCs)
+			end
+			
+			-- color boxes
+			
+			wnd = wndContainer:FindChild("crName")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crName", true)
+			end
+			
+			wnd = wndContainer:FindChild("crBar")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crBar", true)
+			end
+			
+			wnd = wndContainer:FindChild("crMarker")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crMarker", true)
+			end
+			
+			-- number boxes
+			
+			wnd = wndContainer:FindChild("nHideBarsOver")
+			if wnd ~= nil then
+				wnd:SetText(self.tSettings[sType].nHideBarsOver)
+			end
+		end
 	end
 end
 

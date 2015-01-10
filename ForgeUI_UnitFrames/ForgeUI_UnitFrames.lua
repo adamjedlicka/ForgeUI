@@ -79,7 +79,7 @@ function ForgeUI_UnitFrames:OnLoad()
 end
 
 function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
-	local wnd = ForgeUI.AddItemButton(self, "Unit frames")
+	--local wnd = ForgeUI.AddItemButton(self, "Unit frames")
 	--ForgeUI.AddItemListToButton(self, wnd, {
 	--	{ strDisplayName = "General", strContainer = "Container" },
 	--	{ strDisplayName = "Player frame", strContainer = "Container_PlayerFrame" },

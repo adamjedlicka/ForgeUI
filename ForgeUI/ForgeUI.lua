@@ -157,6 +157,10 @@ function ForgeUI.RegisterAddon(tAddon)
 		if tAddon.ForgeAPI_AfterRestore ~= nil then
 			tAddon:ForgeAPI_AfterRestore() -- Forge API AfterRestore
 		end
+        
+        if tAddon.ForgeAPI_LoadOptions ~= nil then
+			tAddon:ForgeAPI_LoadOptions() -- Forge API LoadOptions
+		end
 	else
 		tAddonsToRegister[tAddon.strAddonName] = tAddon
 	end
@@ -184,7 +188,8 @@ function ForgeUI.AddItemListToButton(tAddon, wndButton, tItems)
 	local wndList = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_ListHolder", ForgeUIInst.wndMain:FindChild("ForgeUI_Form_ItemList"), ForgeUIInst)
 	wndList:Show(false)
 	local wndBackButton = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
-	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText("BACK")
+	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText("--- BACK ---")
+	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetTextFlags("DT_CENTER", true)
 	
 	for i, tItem in pairs(tItems) do
 		local wndBtn = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
