@@ -76,8 +76,10 @@ function ForgeUI_CastBars:OnNextFrame()
 		self:UpdateCastBar(unitTarget, self.wndTargetCastBar)
 		self:UpdateMoOBar(unitTarget, self.wndTargetCastBar)
 		self:UpdateInterruptArmor(unitTarget, self.wndTargetCastBar)
-	else
-		self.wndTargetCastBar:Show(false, true)
+	else	
+		if self.wndTargetCastBar:IsShown() then
+			self.wndTargetCastBar:Show(false, true)
+		end
 	end
 	
 	if self.cast ~= nil then
@@ -117,6 +119,8 @@ function ForgeUI_CastBars:OnUpdateSpellThreshold(idSpell, nNewThreshold)
 	local splObject = GameLib.GetSpell(idSpell)
 	local strSpellName = splObject:GetName()
 	
+	self.cast.nThreshold = nNewThreshold
+	
 	self.wndPlayerCastBar:FindChild("SpellName"):SetText(strSpellName)
 	self.wndPlayerCastBar:FindChild("TickBar"):SetProgress(self.cast.nMaxThreshold - nNewThreshold)
 	
@@ -141,8 +145,12 @@ function ForgeUI_CastBars:UpdateCastBar(unit, wnd)
 	local fDuration
 	local fElapsed
 	local strSpellName
+	local bShowCast = false
+	local bShowTick = false
 	
 	if unit:ShouldShowCastBar() then
+		bShowCast = true
+		
 		fDuration = unit:GetCastDuration()
 		fElapsed = unit:GetCastElapsed()	
 		strSpellName = unit:GetCastName()
@@ -151,11 +159,26 @@ function ForgeUI_CastBars:UpdateCastBar(unit, wnd)
 		wnd:FindChild("CastBar"):SetMax(fDuration)
 		wnd:FindChild("CastBar"):SetProgress(fElapsed)
 		wnd:FindChild("CastTime"):SetText(string.format("%00.01f", (fDuration - fElapsed)/1000) .. "s")
+	elseif wnd:GetName() ==  "PlayerCastBar" and self.cast ~= nil then
+		wnd:FindChild("SpellName"):SetText(self.cast.strSpellName)
+		wnd:FindChild("CastTime"):SetText(self.cast.nThreshold)
 		
-		wnd:Show(true, true)
-	elseif self.cast == nil then
-		wnd:Show(false, true)
-		wnd:FindChild("CastBar"):SetProgress(0)
+		local fTimeLeft = 1-GameLib.GetSpellThresholdTimePrcntDone(self.cast.id)
+		self.wndPlayerCastBar:FindChild("DurationBar"):SetProgress(fTimeLeft)
+		
+		bShowTick = true
+	end
+	
+	if bShowCast or bShowTick  ~= wnd:IsShown() then
+		wnd:Show(bShowCast or bShowTick, true)
+	end
+	
+	if bShowCast ~= wnd:FindChild("Cast"):IsShown() then
+		wnd:FindChild("Cast"):Show(bShowCast, true)
+	end
+	
+	if bShowTick ~= wnd:FindChild("Tick"):IsShown() then
+		wnd:FindChild("Tick"):Show(bShowTick, true)
 	end
 end
 
@@ -175,7 +198,9 @@ function ForgeUI_CastBars:UpdateMoOBar(unit, wnd)
 		wnd:FindChild("SpellName"):SetText("MoO")
 		wnd:FindChild("CastTime"):SetText(ForgeUI.Round(time, 1))
 		
-		wnd:Show(true, true)
+		if not wnd:IsShown() then
+			wnd:Show(true, true)
+		end
 	else
 		wnd:FindChild("MoOBar"):SetProgress(0)
 		maxTime = 0
@@ -183,13 +208,12 @@ function ForgeUI_CastBars:UpdateMoOBar(unit, wnd)
 end
 
 function ForgeUI_CastBars:UpdateInterruptArmor(unit, wnd)
-	--sprites: HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite
+	local bShow = false
 	nValue = unit:GetInterruptArmorValue()
 	nMax = unit:GetInterruptArmorMax()
 	if nMax == 0 or nValue == nil or unit:IsDead() then
-		wnd:FindChild("InterruptArmor"):Show(false, true)
 	else
-		wnd:FindChild("InterruptArmor"):Show(true, true)
+		bShow = true
 		if nMax == -1 then
 			wnd:FindChild("InterruptArmor"):SetSprite("ForgeUI_IAinf")
 			wnd:FindChild("InterruptArmor_Value"):SetText("")
@@ -197,6 +221,10 @@ function ForgeUI_CastBars:UpdateInterruptArmor(unit, wnd)
 			wnd:FindChild("InterruptArmor"):SetSprite("ForgeUI_IA")
 			wnd:FindChild("InterruptArmor_Value"):SetText(nValue)
 		end
+	end
+	
+	if bShow ~= wnd:FindChild("InterruptArmor"):IsShown() then
+		wnd:FindChild("InterruptArmor"):Show(bShow, true)
 	end
 end
 
