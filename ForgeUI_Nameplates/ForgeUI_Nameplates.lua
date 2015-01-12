@@ -350,7 +350,7 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 		if tRewardInfo == nil then return end
 		
 		for _, reward in _pairs(tRewardInfo) do
-			if reward.strType == "Quest" or "PublicEvent" then
+			if reward.strType == "Quest" or reward.strType == "PublicEvent" then
 				bShowQuest = true
 			end
 			
