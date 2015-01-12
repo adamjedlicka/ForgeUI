@@ -42,7 +42,7 @@ function ForgeUI_Nameplates:new(o)
 	self.wndContainers = {}
 	
 	-- optional
-	self.settings_version = 2
+	self.settings_version = 1
 	self.tSettings = {
 		nMaxRange = 75,
 		crMooBar = "FF7E00FF",
@@ -116,7 +116,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bUseClassColors = true,
-			bShowCast = true,
+			bShowCast = false,
 			bShowGuild = false,
 			crName = "FFFFFFFF",
 			crBar = "FF15B01A"
@@ -127,7 +127,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowBarsInCombat = true,
 			nHideBarsOver = 100,
 			bUseClassColors = true,
-			bShowCast = true,
+			bShowCast = false,
 			bShowGuild = false,
 			crName = "FF43C8F3",
 			crBar = "FF15B01A"
@@ -141,6 +141,7 @@ function ForgeUI_Nameplates:new(o)
 			bShowCast = true,
 			bShowGuild = false,
 			crName = "FFD9544D",
+			crNamePvP = "FFFF0000",
 			crBar = "E50000"
 		},
 		tFriendlyPet = {
@@ -334,24 +335,37 @@ function ForgeUI_Nameplates:UpdateName(tNameplate)
 		name:SetAnchorOffsets(- (nNameWidth / 2), nTop, (nNameWidth / 2), nBottom)
 	end
 	
-	name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
+	if unitOwner:IsPvpFlagged() and self.tSettings["t" .. tNameplate.unitType].crNamePvP ~= nil then
+		name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crNamePvP)
+	else
+		name:SetTextColor(self.tSettings["t" .. tNameplate.unitType].crName)
+	end
 	
 	local questIcon = tNameplate.wnd.quest
-	local bIsReward = false
+	local challangeIcon = tNameplate.wnd.challange
+	local bShowQuest = false
+	local bShowChalange = false
 	if self.tSettings.bShowQuestIcons then
 		local tRewardInfo = tNameplate.unitOwner:GetRewardInfo()
 		if tRewardInfo == nil then return end
 		
 		for _, reward in _pairs(tRewardInfo) do
-			if reward.strType == "Quest" then
-				bIsReward = true
+			if reward.strType == "Quest" or "PublicEvent" then
+				bShowQuest = true
+			end
+			
+			if reward.strType == "Challange" then
+				bShowChalange = true
 			end
 		end
 	end
 	
-	if questIcon:IsShown() ~= bIsReward then
-		questIcon:Show(bIsReward, true)
-		self:UpdateStyle(tNameplate)
+	if questIcon:IsShown() ~= bShowQuest then
+		questIcon:Show(bShowQuest, true)
+	end
+	
+	if challangeIcon:IsShown() ~= bShowChalange then
+		challangeIcon:Show(bShowChalange, true)
 	end
 end
 
@@ -569,10 +583,10 @@ function ForgeUI_Nameplates:UpdateArmor(tNameplate)
 	else
 		bShow = true
 		if nMax == -1 then
-			ia:SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
+			ia:SetSprite("ForgeUI_IAinf")
 			iaText:SetText("")
 		elseif nMax > 0 then
-			ia:SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
+			ia:SetSprite("ForgeUI_IA")
 			iaText:SetText(nValue)
 		end
 	end
@@ -773,7 +787,8 @@ function ForgeUI_Nameplates:GenerateNewNameplate(unitNew)
 			marker = wnd:FindChild("Marker"),
 			ia = wnd:FindChild("IA"),
 			iaText = wnd:FindChild("IAText"),
-			quest = wnd:FindChild("QuestIndicator")
+			quest = wnd:FindChild("QuestIndicator"),
+			challange = wnd:FindChild("ChallangeIndicator")
 		}
 	}
 	
@@ -979,6 +994,11 @@ function ForgeUI_Nameplates:LoadOptions_SpecificType()
 			wnd = wndContainer:FindChild("crName")
 			if wnd ~= nil then
 				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crName", true)
+			end
+			
+			wnd = wndContainer:FindChild("crNamePvP")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crNamePvP", true)
 			end
 			
 			wnd = wndContainer:FindChild("crBar")

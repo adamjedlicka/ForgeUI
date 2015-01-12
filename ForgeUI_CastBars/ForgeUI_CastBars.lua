@@ -27,6 +27,7 @@ function ForgeUI_CastBars:new(o)
 	self.wndContainers = {}
 	
 	-- optional
+	self.settings_version = 1
 	self.tSettings = {
 		bSmoothBars = true,
 		bCenterPlayerText = false,
@@ -35,7 +36,8 @@ function ForgeUI_CastBars:new(o)
 		crBackground = "FF101010",
 		crCastBar = "FF272727",
 		crMooBar = "FFBC00BB",
-		crDuration = "FFFFCC00"
+		crDuration = "FFFFCC00",
+		crText = "FFFFFFFF"
 	}
 	
 	self.cast = nil
@@ -189,10 +191,10 @@ function ForgeUI_CastBars:UpdateInterruptArmor(unit, wnd)
 	else
 		wnd:FindChild("InterruptArmor"):Show(true, true)
 		if nMax == -1 then
-			wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite")
+			wnd:FindChild("InterruptArmor"):SetSprite("ForgeUI_IAinf")
 			wnd:FindChild("InterruptArmor_Value"):SetText("")
 		elseif nMax > 0 then
-			wnd:FindChild("InterruptArmor"):SetSprite("HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value")
+			wnd:FindChild("InterruptArmor"):SetSprite("ForgeUI_IA")
 			wnd:FindChild("InterruptArmor_Value"):SetText(nValue)
 		end
 	end
@@ -220,14 +222,20 @@ function ForgeUI_CastBars:OnDocLoaded()
 end
 
 function ForgeUI_CastBars:UpdateStyles()
+	self.wndPlayerCastBar:FindChild("Border"):SetBGColor(self.tSettings.crBorder)
 	self.wndPlayerCastBar:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
 	self.wndPlayerCastBar:FindChild("CastBar"):SetBarColor(self.tSettings.crCastBar)
 	self.wndPlayerCastBar:FindChild("TickBar"):SetBarColor(self.tSettings.crCastBar)
 	self.wndPlayerCastBar:FindChild("DurationBar"):SetBarColor(self.tSettings.crDuration)
+	self.wndPlayerCastBar:FindChild("CastTime"):SetTextColor(self.tSettings.crText)
+	self.wndPlayerCastBar:FindChild("SpellName"):SetTextColor(self.tSettings.crText)
 	
+	self.wndTargetCastBar:FindChild("Border"):SetBGColor(self.tSettings.crBorder)
 	self.wndTargetCastBar:FindChild("Background"):SetBGColor(self.tSettings.crBackground)
 	self.wndTargetCastBar:FindChild("CastBar"):SetBarColor(self.tSettings.crCastBar)
 	self.wndTargetCastBar:FindChild("MoOBar"):SetBarColor(self.tSettings.crMooBar)
+	self.wndTargetCastBar:FindChild("CastTime"):SetTextColor(self.tSettings.crText)
+	self.wndTargetCastBar:FindChild("SpellName"):SetTextColor(self.tSettings.crText)
 	
 	if self.tSettings.bCenterTargetText then
 		self.wndTargetCastBar:FindChild("SpellName"):SetAnchorOffsets(10, 0, 0, 0)
@@ -262,9 +270,6 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerCastBar, "ForgeUI_CastBars_PlayerCastBar", self.wndMovables:FindChild("Movable_PlayerCastBar"))
 	ForgeUI.RegisterWindowPosition(self, self.wndTargetCastBar, "ForgeUI_CastBars_TargetCastBar", self.wndMovables:FindChild("Movable_TargetCastBar"))
 	
-	self:UpdateStyles()
-	
-	self.wndContainers["Container"]:FindChild("SmoothBars_Button"):SetCheck(self.tSettings.bSmoothBars)
 	if self.tSettings.bSmoothBars == true then
 		Apollo.RegisterEventHandler("NextFrame", 	"OnNextFrame", self)
 	else
@@ -273,10 +278,8 @@ function ForgeUI_CastBars:ForgeAPI_AfterRestore()
 	Apollo.RegisterEventHandler("StartSpellThreshold", 	"OnStartSpellThreshold", self)
 	Apollo.RegisterEventHandler("ClearSpellThreshold", 	"OnClearSpellThreshold", self)
 	Apollo.RegisterEventHandler("UpdateSpellThreshold", "OnUpdateSpellThreshold", self)
-end
-
-function ForgeUI_CastBars:ForgeAPI_BeforeSave()
-	self.tSettings.bSmoothBars = self.wndContainers["Container"]:FindChild("SmoothBars_Button"):IsChecked()
+	
+	self:UpdateStyles()
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -286,6 +289,39 @@ end
 function ForgeUI_CastBars:OnWindowMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
 	self.wndPlayerCastBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_PlayerCastBar"):GetAnchorOffsets())
 	self.wndTargetCastBar:SetAnchorOffsets(self.wndMovables:FindChild("Movable_TargetCastBar"):GetAnchorOffsets())
+end
+
+---------------------------------------------------------------------------------------------------
+-- Container Functions
+---------------------------------------------------------------------------------------------------
+
+function ForgeUI_CastBars:ForgeAPI_LoadOptions()
+	local wndContainer = self.wndContainers.Container
+	
+	wndContainer:FindChild("bSmoothBars"):SetCheck(self.tSettings.bSmoothBars)
+	wndContainer:FindChild("bCenterPlayerText"):SetCheck(self.tSettings.bCenterPlayerText)
+	wndContainer:FindChild("bCenterTargetText"):SetCheck(self.tSettings.bCenterTargetText)
+	
+	ForgeUI.ColorBoxChange(self, wndContainer:FindChild("crBorder"), self.tSettings, "crBorder", true)
+	ForgeUI.ColorBoxChange(self, wndContainer:FindChild("crBackground"), self.tSettings, "crBackground", true)
+	ForgeUI.ColorBoxChange(self, wndContainer:FindChild("crCastBar"), self.tSettings, "crCastBar", true)
+	ForgeUI.ColorBoxChange(self, wndContainer:FindChild("crMooBar"), self.tSettings, "crMooBar", true)
+	ForgeUI.ColorBoxChange(self, wndContainer:FindChild("crDuration"), self.tSettings, "crDuration", true)
+	ForgeUI.ColorBoxChange(self, wndContainer:FindChild("crText"), self.tSettings, "crText", true)
+end
+
+function ForgeUI_CastBars:OnOptionsChanged( wndHandler, wndControl )
+	local strType = wndControl:GetParent():GetName()
+	
+	if strType == "CheckBox" then
+		self.tSettings[wndControl:GetName()] = wndControl:IsChecked()
+	end
+	
+	if strType == "ColorBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings, wndControl:GetName())
+	end
+	
+	self:UpdateStyles()
 end
 
 -----------------------------------------------------------------------------------------------
