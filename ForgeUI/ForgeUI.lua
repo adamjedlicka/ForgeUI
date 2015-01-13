@@ -499,11 +499,7 @@ function ForgeUI:SetActiveItem(wndControl)
 end
 
 function ForgeUI:TestFunction( wndHandler, wndControl, eMouseButton )
-	for _, addon in pairs(tAddons) do
-		if addon.ForgeAPI_TestFunction ~= nil then
-			addon:ForgeAPI_TestFunction()		
-		end
-	end
+	ForgeUI.GenerateGradient("FFFFFF", "000000", 10, false)
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -627,6 +623,37 @@ end
 
 function ForgeUI.ConvertAlpha(value)	
 	return string.format("%02X", math.floor(value * 255 + 0.5))
+end
+
+function ForgeUI.GenerateGradient(strColorStart, strColorEnd, nSteps, nStep, bAlpha)
+	local colorBegin
+	local colorEnd
+
+	if bAlpha then
+		colorBegin = string.sub(strColorStart, 3, 8)
+		colorEnd = string.sub(strColorEnd, 3, 8)
+	else
+		colorBegin = strColorStart
+		colorEnd = strColorEnd
+	end
+	
+	local colorR0 = tonumber(string.sub(colorBegin, 1, 2), 16)
+	local colorG0 = tonumber(string.sub(colorBegin, 3, 4), 16)
+	local colorB0 = tonumber(string.sub(colorBegin, 5, 6), 16)
+  	
+	local colorR1 = tonumber(string.sub(colorEnd, 1, 2), 16)
+	local colorG1 = tonumber(string.sub(colorEnd, 3, 4), 16)
+	local colorB1 = tonumber(string.sub(colorEnd, 5, 6), 16)
+
+	local colorR = ((colorR1 - colorR0) / nSteps * nStep) + colorR0
+	local colorG = ((colorG1 - colorG0) / nSteps * nStep) + colorG0
+	local colorB = ((colorB1 - colorB0) / nSteps * nStep) + colorB0
+	
+    if bAlpha then
+        return string.format("FF%02x%02x%02x", colorR, colorG, colorB)
+    else
+	   return string.format("%02x%02x%02x", colorR, colorG, colorB)
+    end
 end
 
 ForgeUIInst:Init() 

@@ -45,13 +45,52 @@ function ForgeUI_UnitFrames:new(o)
 	self.wndContainers = {}
 	
 	-- optional
+	self.settings_version = 1
 	self.tSettings = {
-		backgroundColor = "131313",
-		backgroundBarColor = "101010",
-		hpBarColor = "272727",
-		hpTextColor = "75CC26",
-		shieldBarColor = "0699F3",
-		absorbBarColor = "FFC600"
+		tPlayerFrame = {
+			bUseGradient = false,
+			crBorder = "FF000000",
+			crBackground = "FF101010",
+			crHpBar = "FF272727",
+			crHpBarGradient = "FFFF0000",
+			crHpValue = "FF75CC26",
+			crShieldBar = "FF0699F3",
+			crShieldValue = "FFFFFFFF",
+			crAbsorbBar = "FFFFC600",
+			crAbsorbValue = "FFFFFFFF"
+		},
+		tTargetFrame = {
+			bUseGradient = false,
+			crBorder = "FF000000",
+			crBackground = "FF101010",
+			crHpBar = "FF272727",
+			crHpBarGradient = "FFFF0000",
+			crHpValue = "FF75CC26",
+			crShieldBar = "FF0699F3",
+			crShieldValue = "FFFFFFFF",
+			crAbsorbBar = "FFFFC600",
+			crAbsorbValue = "FFFFFFFF"
+		},
+		tTotFrame = {
+			crBorder = "FF000000",
+			crBackground = "FF101010",
+			crHpBar = "FF272727",
+			crHpValue = "FF75CC26",
+			crShieldBar = "FF0699F3",
+			crShieldValue = "FFFFFFFF",
+			crAbsorbBar = "FFFFC600",
+			crAbsorbValue = "FFFFFFFF"
+		},
+		tFocusFrame = {
+			crBorder = "FF000000",
+			crBackground = "FF101010",
+			crHpBar = "FF272727",
+			crHpValue = "FF75CC26",
+			crShieldBar = "FF0699F3",
+			crShieldValue = "FFFFFFFF",
+			crAbsorbBar = "FFFFC600",
+			crAbsorbValue = "FFFFFFFF"
+		}
 	}
 	
 	self.playerClass = nil
@@ -78,12 +117,13 @@ function ForgeUI_UnitFrames:OnLoad()
 end
 
 function ForgeUI_UnitFrames:ForgeAPI_AfterRegistration()
-	--local wnd = ForgeUI.AddItemButton(self, "Unit frames")
-	--ForgeUI.AddItemListToButton(self, wnd, {
-	--	{ strDisplayName = "General", strContainer = "Container" },
-	--	{ strDisplayName = "Player frame", strContainer = "Container_PlayerFrame" },
-	--	{ strDisplayName = "Target frame", strContainer = "Container_TargetFrame" }
-	--}) 
+	local wnd = ForgeUI.AddItemButton(self, "Unit frames")
+	ForgeUI.AddItemListToButton(self, wnd, {
+		{ strDisplayName = "Player frame", strContainer = "Container_PlayerFrame" },
+		{ strDisplayName = "Target frame", strContainer = "Container_TargetFrame" },
+		{ strDisplayName = "ToT frame", strContainer = "Container_TotFrame" },
+		{ strDisplayName = "Focus frame", strContainer = "Container_FocusFrame" }
+	}) 
 	
 	self.wndPlayerFrame = Apollo.LoadForm(self.xmlDoc, "ForgeUI_PlayerFrame", "FixedHudStratumLow", self)
 	self.wndPlayerBuffFrame = Apollo.LoadForm(self.xmlDoc, "PlayerBuffContainerWindow", "FixedHudStratumHigh", self)
@@ -126,7 +166,7 @@ function ForgeUI_UnitFrames:UpdatePlayerFrame(unit)
 	self.wndPlayerFrame:FindChild("Name"):SetText(unit:GetName())
 	self.wndPlayerFrame:FindChild("Name"):SetTextColor("FF" .. ForgeUI.GetSettings().classColors[self.playerClass])
 	
-	self:UpdateHPBar(unit, self.wndPlayerFrame)
+	self:UpdateHPBar(unit, self.wndPlayerFrame, "tPlayerFrame")
 	self:UpdateShieldBar(unit, self.wndPlayerFrame)
 	self:UpdateAbsorbBar(unit, self.wndPlayerFrame)
 	self:UpdateInterruptArmor(unit, self.wndPlayerFrame)
@@ -159,7 +199,7 @@ function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 		self.wndTargetFrame:FindChild("Name"):SetTextColor(unit:GetNameplateColor())
 	end
 	
-	self:UpdateHPBar(unit, self.wndTargetFrame)
+	self:UpdateHPBar(unit, self.wndTargetFrame, "tTargetFrame")
 	self:UpdateShieldBar(unit, self.wndTargetFrame)
 	self:UpdateAbsorbBar(unit, self.wndTargetFrame)
 	self:UpdateInterruptArmor(unit, self.wndTargetFrame)
@@ -217,11 +257,18 @@ function ForgeUI_UnitFrames:UpdateFocusFrame(unitSource)
 end
 
 -- hp bar
-function ForgeUI_UnitFrames:UpdateHPBar(unit, wnd)
+function ForgeUI_UnitFrames:UpdateHPBar(unit, wnd, strSettings)
 	if unit:GetHealth() ~= nil then
 		wnd:FindChild("Background"):Show(true)
 		wnd:FindChild("HP_ProgressBar"):SetMax(unit:GetMaxHealth())
 		wnd:FindChild("HP_ProgressBar"):SetProgress(unit:GetHealth())
+		
+		if strSettings ~= nil and self.tSettings[strSettings].bUseGradient then
+			local nPercent = ForgeUI.Round((unit:GetHealth() / unit:GetMaxHealth()) * 100, 0)
+			local crGradient = ForgeUI.GenerateGradient(self.tSettings[strSettings].crHpBarGradient, self.tSettings[strSettings].crHpBar, 100, nPercent, true)
+			wnd:FindChild("HP_ProgressBar"):SetBarColor(crGradient)
+		end
+		
 		if wnd:FindChild("HP_TextValue") ~= nil then
 			wnd:FindChild("HP_TextValue"):SetText(ForgeUI.ShortNum(unit:GetHealth()))
 			wnd:FindChild("HP_TextPercent"):SetText(ForgeUI.Round((unit:GetHealth() / unit:GetMaxHealth()) * 100, 1) .. "%")
@@ -371,28 +418,116 @@ function ForgeUI_UnitFrames:ForgeAPI_AfterRestore()
 	ForgeUI.RegisterWindowPosition(self, self.wndPlayerDebuffFrame, "ForgeUI_UnitFrames_PlayerDebuffs", self.wndMovables:FindChild("Movable_PlayerDebuffs"))
 	ForgeUI.RegisterWindowPosition(self, self.wndTargetBuffFrame, "ForgeUI_UnitFrames_TargetBuffs", self.wndMovables:FindChild("Movable_TargetBuffs"))
 	ForgeUI.RegisterWindowPosition(self, self.wndTargetDebuffFrame, "ForgeUI_UnitFrames_TargetDebuffs", self.wndMovables:FindChild("Movable_TargetDebuffs"))
+	
+	self:UpdateStyles()
+end
 
-	self.wndPlayerFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
-	self.wndPlayerFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
-	self.wndPlayerFrame:FindChild("Shield_ProgressBar"):SetBarColor("ff" .. self.tSettings.shieldBarColor)
-	self.wndPlayerFrame:FindChild("Absorb_ProgressBar"):SetBarColor("ff" .. self.tSettings.absorbBarColor)	
-	self.wndPlayerFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
-	self.wndPlayerFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+function ForgeUI_UnitFrames:ForgeAPI_LoadOptions()
+	for _, wndContainer in pairs(self.wndContainers) do
+		if wndContainer:GetName() ~= "Container_General" then
+			local wnd
+			local sType = "t" .. string.sub(wndContainer:GetName(), 11, string.len(wndContainer:GetName()))
+			
+			wnd = wndContainer:FindChild("crBorder")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crBorder", true)
+			end
+			
+			wnd = wndContainer:FindChild("crBackground")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crBackground", true)
+			end
+			
+			wnd = wndContainer:FindChild("crHpBar")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crHpBar", true)
+			end
+			
+			wnd = wndContainer:FindChild("crHpBarGradient")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crHpBarGradient", true)
+			end
+			
+			wnd = wndContainer:FindChild("crHpValue")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crHpValue", true)
+			end
+			
+			wnd = wndContainer:FindChild("crShieldBar")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crShieldBar", true)
+			end
+			
+			wnd = wndContainer:FindChild("crShieldValue")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crShieldValue", true)
+			end
+			
+			wnd = wndContainer:FindChild("crAbsorbBar")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crAbsorbBar", true)
+			end
+			
+			wnd = wndContainer:FindChild("crAbsorbValue")
+			if wnd ~= nil then
+				ForgeUI.ColorBoxChange(self, wnd, self.tSettings[sType], "crAbsorbValue", true)
+			end
+
+			-- checkboxes
+			
+			wnd = wndContainer:FindChild("bUseGradient")
+			if wnd ~= nil then
+				wnd:SetCheck(self.tSettings[sType].bUseGradient)
+			end
+		end
+	end
+end
+
+function ForgeUI_UnitFrames:OnOptionsChanged( wndHandler, wndControl )
+	local strType = wndControl:GetParent():GetName()
+	local strControlType = "t" .. string.sub(wndControl:GetParent():GetParent():GetName(), 11, string.len(wndControl:GetParent():GetParent():GetName()))
 	
-	self.wndTargetFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
-	self.wndTargetFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
-	self.wndTargetFrame:FindChild("Shield_ProgressBar"):SetBarColor("ff" .. self.tSettings.shieldBarColor)
-	self.wndTargetFrame:FindChild("Absorb_ProgressBar"):SetBarColor("ff" .. self.tSettings.absorbBarColor)	
-	self.wndTargetFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
-	self.wndTargetFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+	if strType == "ColorBox" then
+		ForgeUI.ColorBoxChange(self, wndControl, self.tSettings[strControlType], wndControl:GetName())
+	end
 	
-	self.wndToTFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
-	self.wndToTFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
+	if strType == "CheckBox" then
+		self.tSettings[strControlType][wndControl:GetName()] = wndControl:IsChecked()
+	end
 	
-	self.wndFocusFrame:FindChild("Background"):SetBGColor("ff" .. self.tSettings.backgroundBarColor)
-	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor("ff" .. self.tSettings.hpBarColor)
-	self.wndFocusFrame:FindChild("HP_TextValue"):SetTextColor("ff" .. self.tSettings.hpTextColor)
-	self.wndFocusFrame:FindChild("HP_TextPercent"):SetTextColor("ff" .. self.tSettings.hpTextColor)
+	self:UpdateStyles()
+end
+
+function ForgeUI_UnitFrames:UpdateStyles()
+	self.wndPlayerFrame:FindChild("HPBar"):SetBGColor(self.tSettings.tPlayerFrame.crBorder)
+	self.wndPlayerFrame:FindChild("Background"):SetBGColor(self.tSettings.tPlayerFrame.crBackground)
+	self.wndPlayerFrame:FindChild("HP_ProgressBar"):SetBarColor(self.tSettings.tPlayerFrame.crHpBar)
+	self.wndPlayerFrame:FindChild("HP_TextValue"):SetTextColor(self.tSettings.tPlayerFrame.crHpValue)
+	self.wndPlayerFrame:FindChild("HP_TextPercent"):SetTextColor(self.tSettings.tPlayerFrame.crHpValue)
+	self.wndPlayerFrame:FindChild("Shield_ProgressBar"):SetBarColor(self.tSettings.tPlayerFrame.crShieldBar)
+	self.wndPlayerFrame:FindChild("Shield_TextValue"):SetTextColor(self.tSettings.tPlayerFrame.crShieldValue)
+	self.wndPlayerFrame:FindChild("Absorb_ProgressBar"):SetBarColor(self.tSettings.tPlayerFrame.crAbsorbBar)
+	self.wndPlayerFrame:FindChild("Absorb_TextValue"):SetTextColor(self.tSettings.tPlayerFrame.crAbsorbValue)
+	
+	self.wndTargetFrame:FindChild("HPBar"):SetBGColor(self.tSettings.tTargetFrame.crBorder)
+	self.wndTargetFrame:FindChild("Background"):SetBGColor(self.tSettings.tTargetFrame.crBackground)
+	self.wndTargetFrame:FindChild("HP_ProgressBar"):SetBarColor(self.tSettings.tTargetFrame.crHpBar)
+	self.wndTargetFrame:FindChild("HP_TextValue"):SetTextColor(self.tSettings.tTargetFrame.crHpValue)
+	self.wndTargetFrame:FindChild("HP_TextPercent"):SetTextColor(self.tSettings.tTargetFrame.crHpValue)
+	self.wndTargetFrame:FindChild("Shield_ProgressBar"):SetBarColor(self.tSettings.tTargetFrame.crShieldBar)
+	self.wndTargetFrame:FindChild("Shield_TextValue"):SetTextColor(self.tSettings.tTargetFrame.crShieldValue)
+	self.wndTargetFrame:FindChild("Absorb_ProgressBar"):SetBarColor(self.tSettings.tTargetFrame.crAbsorbBar)
+	self.wndTargetFrame:FindChild("Absorb_TextValue"):SetTextColor(self.tSettings.tTargetFrame.crAbsorbValue)
+	
+	self.wndToTFrame:FindChild("HPBar"):SetBGColor(self.tSettings.tTotFrame.crBorder)
+	self.wndToTFrame:FindChild("Background"):SetBGColor(self.tSettings.tTotFrame.crBackground)
+	self.wndToTFrame:FindChild("HP_ProgressBar"):SetBarColor(self.tSettings.tTotFrame.crHpBar)
+	
+	self.wndFocusFrame:FindChild("HPBar"):SetBGColor(self.tSettings.tFocusFrame.crBorder)
+	self.wndFocusFrame:FindChild("Background"):SetBGColor(self.tSettings.tFocusFrame.crBackground)
+	self.wndFocusFrame:FindChild("HP_ProgressBar"):SetBarColor(self.tSettings.tFocusFrame.crHpBar)
+	self.wndFocusFrame:FindChild("HP_TextValue"):SetTextColor(self.tSettings.tFocusFrame.crHpValue)
+	self.wndFocusFrame:FindChild("HP_TextPercent"):SetTextColor(self.tSettings.tFocusFrame.crHpValue)
 end
 
 -----------------------------------------------------------------------------------------------
