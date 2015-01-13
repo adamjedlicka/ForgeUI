@@ -19,14 +19,6 @@ tClassEnums = {
 	[GameLib.CodeEnumClass.Spellslinger]	= "spellslinger"
 } 
 
-tEngineerStances = {
-	[0] = "",
-	[1] = Apollo.GetString("EngineerResource_Aggro"),
-	[2] = Apollo.GetString("EngineerResource_Defend"),
-	[3] = Apollo.GetString("EngineerResource_Passive"),
-	[4] = Apollo.GetString("EngineerResource_Assist"),
-	[5] = Apollo.GetString("EngineerResource_Stay"),
-}
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
@@ -183,12 +175,13 @@ end
 -- Target Frame
 function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	local unit = unitSource:GetTarget()
-
 	if unit == nil then 
-		self.wndTargetFrame:Show(false, true)
-		self.wndToTFrame:Show(false, true)
-		self.wndTargetBuffFrame:SetUnit(nil)
-		self.wndTargetDebuffFrame:SetUnit(nil)
+		if self.wndTargetFrame:IsShown() then
+			self.wndTargetFrame:Show(false, true)
+			self.wndToTFrame:Show(false, true)
+			self.wndTargetBuffFrame:SetUnit(nil)
+			self.wndTargetDebuffFrame:SetUnit(nil)
+		end
 		return
 	end
 
@@ -207,9 +200,12 @@ function ForgeUI_UnitFrames:UpdateTargetFrame(unitSource)
 	self.wndTargetBuffFrame:SetUnit(unit)
 	self.wndTargetDebuffFrame:SetUnit(unit)
 	self.wndTargetFrame:SetData(unit)
-	self.wndTargetBuffFrame:Show(true, true)
-	self.wndTargetDebuffFrame:Show(true, true)
-	self.wndTargetFrame:Show(true, true)
+	
+	if not self.wndTargetFrame:IsShown() then
+		self.wndTargetBuffFrame:Show(true, true)
+		self.wndTargetDebuffFrame:Show(true, true)
+		self.wndTargetFrame:Show(true, true)
+	end
 	
 	self:UpdateToTFrame(unit)
 end
@@ -219,7 +215,9 @@ function ForgeUI_UnitFrames:UpdateToTFrame(unitSource)
 	local unit = unitSource:GetTarget()
 	
 	if unit == nil then 
-		self.wndToTFrame:Show(false)
+		if self.wndToTFrame:IsShown() then
+			self.wndToTFrame:Show(false)
+		end
 		return
 	end
 	
@@ -232,7 +230,9 @@ function ForgeUI_UnitFrames:UpdateToTFrame(unitSource)
 	
 	self:UpdateHPBar(unit, self.wndToTFrame)
 	self.wndToTFrame:SetData(unit)
-	self.wndToTFrame:Show(true)
+	if not self.wndToTFrame:IsShown() then
+		self.wndToTFrame:Show(true)
+	end
 end
 
 -- Focus Frame
@@ -240,7 +240,9 @@ function ForgeUI_UnitFrames:UpdateFocusFrame(unitSource)
 	local unit = unitSource:GetAlternateTarget()
 	
 	if unit == nil then 
-		self.wndFocusFrame:Show(false)
+		if self.wndFocusFrame:IsShown() then
+			self.wndFocusFrame:Show(false)
+		end
 		return
 	end
 	
@@ -253,7 +255,9 @@ function ForgeUI_UnitFrames:UpdateFocusFrame(unitSource)
 	
 	self:UpdateHPBar(unit, self.wndFocusFrame)
 	self.wndFocusFrame:SetData(unit)
-	self.wndFocusFrame:Show(true)
+	if not self.wndFocusFrame:IsShown() then
+		self.wndFocusFrame:Show(true)
+	end
 end
 
 -- hp bar
@@ -317,7 +321,6 @@ end
 
 -- interrupt armor
 function ForgeUI_UnitFrames:UpdateInterruptArmor(unit, wnd)
-	--sprites: HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Value HUD_TargetFrame:spr_TargetFrame_InterruptArmor_Infinite
 	nValue = unit:GetInterruptArmorValue()
 	nMax = unit:GetInterruptArmorMax()
 	if nMax == 0 or nValue == nil or unit:IsDead() then
