@@ -125,10 +125,10 @@ function ForgeUI_MiniMap:OnUpdateTimer()
 	local unitTarget = unitPlayer:GetTarget()
 	if unitTarget == nil then return end
 	
-	local tTypes = unitTarget:GetMiniMapMarkers()
-	for _, strType in pairs(tTypes) do
-		Print(strType)
-	end
+	--local tTypes = unitTarget:GetMiniMapMarkers()
+	--for _, strType in pairs(tTypes) do
+	--	Print(strType)
+	--end
 end
 
 function ForgeUI_MiniMap:OnUnitCreated(unit)
