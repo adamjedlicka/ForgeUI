@@ -97,7 +97,7 @@ function ForgeUI:OnDocLoaded()
 	wndItemContainer = self.wndMain:FindChild("ForgeUI_ContainerHolder")
 	wndItemContainer2 = self.wndMain:FindChild("ForgeUI_ContainerHolder2")
 
-	Apollo.RegisterSlashCommand("forgeui", "OnForgeUIOn", self)
+	Apollo.RegisterSlashCommand("forgeui", "OnForgeUIcmd", self)
 	
 	local tmpWnd = ForgeUI.AddItemButton(self, "Home", "ForgeUI_Home")
 	wndActiveItem = tmpWnd
@@ -106,6 +106,8 @@ function ForgeUI:OnDocLoaded()
 	ForgeUI.AddItemButton(self, "General settings", "ForgeUI_General")
 	
 	ForgeUI.RegisterWindowPosition(self, self.wndMain, "ForgeUI_Core")
+	
+	self.wndMovables = Apollo.LoadForm(self.xmlDoc, "ForgeUI_Movables", nil, self)
 	
 	bCanRegisterAddons = true
 	
@@ -139,10 +141,25 @@ function ForgeUI.RegisterAddon(tAddon)
 			tAddon:ForgeAPI_AfterRegistration() -- Forge API AfterRegistration
 		end
 		
-		tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+		if tSettings_addons[tAddon.strAddonName] ~= nil then
+			if tAddon.settings_version ~= nil then
+				if tAddon.settings_version == tSettings_addons[tAddon.strAddonName].settings_version then
+					tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+				end
+				tAddon.tSettings.settings_version = nil
+			else
+				if tSettings_addons[tAddon.strAddonName].settings_version == nil then
+					tAddon.tSettings = ForgeUI.CopyTable(tAddon.tSettings, tSettings_addons[tAddon.strAddonName])
+				end
+			end
+		end
 		
 		if tAddon.ForgeAPI_AfterRestore ~= nil then
 			tAddon:ForgeAPI_AfterRestore() -- Forge API AfterRestore
+		end
+        
+        if tAddon.ForgeAPI_LoadOptions ~= nil then
+			tAddon:ForgeAPI_LoadOptions() -- Forge API LoadOptions
 		end
 	else
 		tAddonsToRegister[tAddon.strAddonName] = tAddon
@@ -171,7 +188,8 @@ function ForgeUI.AddItemListToButton(tAddon, wndButton, tItems)
 	local wndList = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_ListHolder", ForgeUIInst.wndMain:FindChild("ForgeUI_Form_ItemList"), ForgeUIInst)
 	wndList:Show(false)
 	local wndBackButton = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
-	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText("BACK")
+	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetText("--- BACK ---")
+	wndBackButton:GetParent():FindChild("ForgeUI_Item_Text"):SetTextFlags("DT_CENTER", true)
 	
 	for i, tItem in pairs(tItems) do
 		local wndBtn = Apollo.LoadForm(ForgeUIInst.xmlDoc, "ForgeUI_Item", wndList, ForgeUIInst):FindChild("ForgeUI_Item_Button")
@@ -218,6 +236,8 @@ function ForgeUI.RegisterWindowPosition(tAddon, wnd, strName, wndMovable)
 	if wndMovable ~= nil then
 		wndMovable:SetAnchorOffsets(wnd:GetAnchorOffsets())
 		wndMovable:SetAnchorPoints(wnd:GetAnchorPoints())
+		wndMovable:SetSprite("CRB_ActionBarIconSprites:sprActionBar_OrangeBorder")
+		wndMovable:SetBGColor("FFFF0000")
 	end
 end
 
@@ -229,7 +249,7 @@ function ForgeUI.GetSettings(arg)
 	end
 end
 
-function ForgeUI.ColorBoxChanged(wndControl, settings, data)
+function ForgeUI.ColorBoxChanged(wndControl, settings, data) -- deprecated
 	if settings ~= nil then
 		wndControl:SetText(settings)
 		wndControl:SetTextColor("ff" .. settings)
@@ -244,10 +264,50 @@ function ForgeUI.ColorBoxChanged(wndControl, settings, data)
 	if string.len(colorString) > 6 then
 		wndControl:SetText(string.sub(colorString, 0, 6))
 	elseif string.len(colorString) == 6 then
-		wndControl:SetTextColor("ff" .. colorString)
+		wndControl:SetTextColor("FF" .. colorString)
+		settings = "FF" .. colorString
 	end
 	
 	return wndControl
+end
+
+function ForgeUI.ColorBoxChange(tAddon, wndControl, tSettings, sValue, bOverwrite, bAlpha)
+	local sColor = "FFFFFFFF"
+	if bOverwrite then
+		if bAlpha then
+			sColor = sValue
+		else
+			sColor = string.sub(sValue, 3, 8)
+		end
+	end
+
+	sColor = wndControl:GetText()
+	
+	if tSettings ~= nil and bOverwrite then
+		if bAlpha then
+			sColor = string.sub(tSettings[sValue], 0, 8)
+		else
+			sColor = string.sub(tSettings[sValue], 3, 8)
+		end
+	end
+		
+	if bAlpha then
+		if string.len(sColor) > 8 then
+			wndControl:SetText(string.sub(sColor, 0, 8))
+		elseif string.len(sColor) == 8 then
+			wndControl:SetText(sColor)
+			wndControl:SetTextColor(sColor)
+			tSettings[sValue] = sColor
+		end
+	else
+		if string.len(sColor) > 6 then
+			wndControl:SetText(string.sub(sColor, 0, 6))
+		elseif string.len(sColor) == 6 then
+			wndControl:SetText(sColor)
+			wndControl:SetTextColor("FF" .. sColor)
+			tSettings[sValue] = "FF" .. sColor
+		end
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -263,15 +323,23 @@ function ForgeUI:OnSave(eType)
 	end
 	
 	local tSett = {}
-	local tAdd = {}
+	local tAdd = tSettings_addons
 
 	tSett = ForgeUI.CopyTable(tSett, tSettings)
 	
 	for addonName, addon in pairs(tAddons) do -- addon settings
-		if addon.ForgeAPI_BeforeSave ~= nil then
-			addon:ForgeAPI_BeforeSave() -- Forge API BeforeSave
+		if addon.bReset ~= true then
+			if addon.ForgeAPI_BeforeSave ~= nil then
+				addon:ForgeAPI_BeforeSave() -- Forge API BeforeSave
+			end
+			tAdd[addonName] = {}
+			
+			if addon.settings_version ~= nil then
+				tAdd[addonName].settings_version = addon.settings_version
+			end
+			
+			tAdd[addonName] = ForgeUI.CopyTable(tAdd[addonName], addon.tSettings)
 		end
-		tAdd[addonName] = ForgeUI.CopyTable(tAdd[addonName], addon.tSettings)
 	end
 	
 	for id, wnd in pairs(tSettings_windowsPositions) do -- registered windows
@@ -285,9 +353,9 @@ function ForgeUI:OnSave(eType)
 	end
 
 	return {
-		settings = tSett,
-		addons = tAdd,
 		windowsPositions = tSettings_windowsPositions,
+		addons = tAdd,
+		settings = tSett
 	}
 end
 
@@ -305,6 +373,26 @@ end
 -----------------------------------------------------------------------------------------------
 -- ForgeUI Functions
 -----------------------------------------------------------------------------------------------
+function ForgeUI:OnForgeUIcmd(cmd, arg)
+	if cmd ~= "forgeui" then return end
+	
+	if arg == "" then
+		self:OnForgeUIOn()
+	elseif arg == "reset" then
+		self:ResetDefaults()
+	else
+		tArgs = {}
+		for sArg in arg:gmatch("%w+") do table.insert(tArgs, sArg) end
+		
+		if tArgs[1] == "reset" then
+			if tAddons["ForgeUI_" .. tArgs[2]] ~= nil then
+				tAddons["ForgeUI_" .. tArgs[2]].bReset = true
+			end
+			RequestReloadUI()
+		end
+	end
+end
+
 function ForgeUI:OnConfigure()
 	self:OnForgeUIOn()
 end
@@ -318,7 +406,16 @@ function ForgeUI:OnFOrgeUIOff( wndHandler, wndControl, eMouseButton )
 	self.wndMain:Close()
 end
 
+---------------------------------------------------------------------------------------------------
+-- ForgeUI_Movables Functions
+---------------------------------------------------------------------------------------------------
 function ForgeUI:OnUnlockElements()
+	self.wndMain:Show(false, true)
+	self.wndMain:FindChild("ForgeUI_General_UnlockButton"):SetText("Lock elements")
+
+	self.wndMovables:Show(true, true)
+	self:FillGrid(self.wndMovables:FindChild("Grid"))
+
 	for name, addon in pairs(tAddons) do
 		if addon.wndMovables ~= nil then
 			addon.wndMovables:Show(true, true)
@@ -331,6 +428,12 @@ function ForgeUI:OnUnlockElements()
 end
 
 function ForgeUI:OnLockElements()
+	self.wndMain:Show(true, true)
+	self.wndMain:FindChild("ForgeUI_General_UnlockButton"):SetText("Unlock elements")
+
+	self.wndMovables:Show(false, true)
+	self.wndMovables:FindChild("Grid"):DestroyAllPixies()
+
 	for _, addon in pairs(tAddons) do
 		if addon.wndMovables ~= nil then
 			addon.wndMovables:Show(false, true)
@@ -340,6 +443,41 @@ function ForgeUI:OnLockElements()
 			addon:ForgeAPI_OnLockElements() -- Forge API OnLockElements
 		end
 	end
+end
+
+function ForgeUI:ForgeUI_Movables_GridCheckbox( wndHandler, wndControl, eMouseButton )
+	self.wndMovables:FindChild("Grid"):Show(wndControl:IsChecked(), true)
+end
+
+function ForgeUI:FillGrid(wnd)
+	local nDiameter = 5
+
+	local nHeight = wnd:GetHeight()
+	local nWidth = wnd:GetWidth()
+	
+	for i = 0, nHeight, nDiameter do
+		wnd:AddPixie({
+			strSprite = "BlackFill",
+			loc = {
+		    	fPoints = {0,0,1,0},
+	    		nOffsets = {0,i,0,i + 1}
+			 }
+		})
+	end
+	
+	for i = 0, nWidth, nDiameter do
+		wnd:AddPixie({
+			strSprite = "BlackFill",
+			loc = {
+		    	fPoints = {0,0,0,1},
+	    		nOffsets = {i,0,i + 1,0}
+			 }
+		})
+	end
+end
+
+function ForgeUI:OnMovablesClose( wndHandler, wndControl, eMouseButton )
+	self:OnLockElements()
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -361,24 +499,16 @@ function ForgeUI:SetActiveItem(wndControl)
 end
 
 function ForgeUI:TestFunction( wndHandler, wndControl, eMouseButton )
-	for _, addon in pairs(tAddons) do
-		if addon.ForgeAPI_TestFunction ~= nil then
-			addon:ForgeAPI_TestFunction()		
-		end
-	end
+	ForgeUI.GenerateGradient("FFFFFF", "000000", 10, false)
 end
 
 ---------------------------------------------------------------------------------------------------
 -- ForgeUI_General Functions
 ---------------------------------------------------------------------------------------------------
 function ForgeUI:OnUnlockButtonPressed( wndHandler, wndControl, eMouseButton )
-	if wndControl:GetData() == nil or wndControl:GetData().locked == true then
-		wndControl:SetData({locked = false})
-		wndControl:SetText("Lock elements")
+	if wndControl:GetText() == "Unlock elements" then
 		self:OnUnlockElements()
 	else
-		wndControl:SetData({locked = true})
-		wndControl:SetText("Unock elements")
 		self:OnLockElements()
 	end	
 end
@@ -430,7 +560,7 @@ end
 -- Libraries
 ---------------------------------------------------------------------------------------------------
 function ForgeUI.ReturnTestStr()
-	return "OK"
+	return "ForgeUI"
 end
 
 function ForgeUI.CopyTable(tNew, tOld)
@@ -484,8 +614,46 @@ function ForgeUI.Round(num, idp)
   return math.floor(num * mult + 0.5) / mult
 end
 
+function ForgeUI.InTable(tbl, item)
+    for key, value in pairs(tbl) do
+        if value == item then return key end
+    end
+    return false
+end
+
 function ForgeUI.ConvertAlpha(value)	
 	return string.format("%02X", math.floor(value * 255 + 0.5))
+end
+
+function ForgeUI.GenerateGradient(strColorStart, strColorEnd, nSteps, nStep, bAlpha)
+	local colorBegin
+	local colorEnd
+
+	if bAlpha then
+		colorBegin = string.sub(strColorStart, 3, 8)
+		colorEnd = string.sub(strColorEnd, 3, 8)
+	else
+		colorBegin = strColorStart
+		colorEnd = strColorEnd
+	end
+	
+	local colorR0 = tonumber(string.sub(colorBegin, 1, 2), 16)
+	local colorG0 = tonumber(string.sub(colorBegin, 3, 4), 16)
+	local colorB0 = tonumber(string.sub(colorBegin, 5, 6), 16)
+  	
+	local colorR1 = tonumber(string.sub(colorEnd, 1, 2), 16)
+	local colorG1 = tonumber(string.sub(colorEnd, 3, 4), 16)
+	local colorB1 = tonumber(string.sub(colorEnd, 5, 6), 16)
+
+	local colorR = ((colorR1 - colorR0) / nSteps * nStep) + colorR0
+	local colorG = ((colorG1 - colorG0) / nSteps * nStep) + colorG0
+	local colorB = ((colorB1 - colorB0) / nSteps * nStep) + colorB0
+	
+    if bAlpha then
+        return string.format("FF%02x%02x%02x", colorR, colorG, colorB)
+    else
+	   return string.format("%02x%02x%02x", colorR, colorG, colorB)
+    end
 end
 
 ForgeUIInst:Init() 

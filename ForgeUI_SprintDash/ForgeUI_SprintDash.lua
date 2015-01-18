@@ -20,7 +20,7 @@ function ForgeUI_SprintDash:new(o)
 	self.wndContainers = {}
 	
 	-- optional
-	self.tSettings = {
+    self.tSettings = {
 		sprintColor = "CCCCCC",
 		dashColor = "00AAFF",
 		dashColor2 = "0055AA"
@@ -63,7 +63,7 @@ function ForgeUI_SprintDash:ForgeAPI_AfterRegistration()
 	ForgeUI.AddItemButton(self, "Sprint / dash meter", "Container")
 
 	self.wndSprintMeter = Apollo.LoadForm(self.xmlDoc, "SprintMeter", "InWorldHudStratum", self)
-	self.wndDashMeter = Apollo.LoadForm(self.xmlDoc, "DashMeter", "InWorldHudStratum", self)
+	self.wndDashMeter = Apollo.LoadForm(self.xmlDoc, "DashMeter", "InWorldHudStratumHigh", self)
 	self.wndDashMeter:FindChild("DashMeter_B"):SetSprite("ForgeUI_Sprite:ForgeUI_Border")
 	
 	-- movables
